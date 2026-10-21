@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import gsap from 'gsap'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Send } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
 import Magnetic from '../components/ui/Magnetic'
 import RollLink from '../components/ui/RollLink'
 import { GithubMark, LinkedinMark } from '../components/ui/BrandIcons'
 import { useUI } from '../store/store'
 import { damp } from '../store/scrollStore'
+import { CONTACT_EMAIL } from '../data/profile'
 
 /* smoothed-fill holder lives on the bar element itself */
-type FillEl = HTMLDivElement & { __smooth?: number }
+type FillEl = HTMLSpanElement & { __smooth?: number }
 
 /**
  * Footer — massive CTA, structured info grid with a live Europe/Berlin clock,
@@ -61,19 +62,59 @@ export default function Footer() {
     hour12: false,
   }).format(now)
 
-  /* push-past-bottom detection → portal charge */
+  /* contact form — composes a pre-filled mail: draft (no backend). The
+     submit stays disabled with a hint until `CONTACT_EMAIL` is wired in
+     src/data/profile.ts. */
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [mailSent, setMailSent] = useState(false)
+  const inboxReady = CONTACT_EMAIL.trim().length > 3
+  const mailtoHref = useMemo(() => {
+    const subject = `Portfolio inquiry — ${form.name.trim() || 'someone from the site'}`
+    const body = [form.message.trim(), '', `— ${form.name.trim()}`, form.email.trim()]
+      .filter(Boolean)
+      .join('\n')
+    return `mailto:${CONTACT_EMAIL.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }, [form])
+
+  const setField =
+    (key: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!inboxReady) return
+    window.location.href = mailtoHref
+    setMailSent(true)
+    window.setTimeout(() => setMailSent(false), 7000)
+  }
+
+  /* push-past-bottom detection → portal charge. Mouse: repeated wheel
+     spins past the bottom of the document. Touch: repeated up-swipes at
+     the bottom (wheel events don't exist there — mobile bug). Both bleed
+     slowly so the bar stays a deliberate gesture, not an accident. */
   useEffect(() => {
     if (portalOpen) return
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY <= 0) return
+    const charge = (delta: number) => {
       const limit = document.documentElement.scrollHeight - window.innerHeight
-      if (limit - window.scrollY < 4) {
-        portalProgress.current = Math.min(portalProgress.current + e.deltaY / 3000, 1)
-        if (portalProgress.current >= 1) {
-          portalProgress.current = 0
-          setPortalOpen(true)
-        }
+      if (limit - window.scrollY >= 4) return
+      portalProgress.current = Math.min(portalProgress.current + delta, 1)
+      if (portalProgress.current >= 1) {
+        portalProgress.current = 0
+        setPortalOpen(true)
       }
+    }
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY > 0) charge(e.deltaY / 3000)
+    }
+    let lastTouchY = 0
+    const onTouchStart = (e: TouchEvent) => {
+      lastTouchY = e.touches[0]?.clientY ?? 0
+    }
+    const onTouchMove = (e: TouchEvent) => {
+      const y = e.touches[0]?.clientY ?? lastTouchY
+      const dy = lastTouchY - y /* up-swipe → positive */
+      lastTouchY = y
+      if (dy > 0) charge(dy / 2600)
     }
     /* slow self-bleed so the bar is a deliberate gesture, not an accident */
     const decay = (time: number) => {
@@ -89,9 +130,13 @@ export default function Footer() {
     }
     gsap.ticker.add(decay)
     window.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
     return () => {
       gsap.ticker.remove(decay)
       window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
     }
   }, [portalOpen, setPortalOpen])
 
@@ -136,8 +181,8 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* info grid */}
-      <div className="mt-[12vh] grid gap-10 border-t border-line pt-8 md:grid-cols-4">
+      {/* info grid — located / socials / direct-message form */}
+      <div className="mt-[10vh] grid gap-10 border-t border-line pt-8 md:grid-cols-4">
         <div>
           <span className="eyebrow">located</span>
           <p className="mt-3 text-[0.95rem] font-semibold">Chemnitz, Germany</p>
@@ -168,17 +213,7 @@ export default function Footer() {
               className="text-[0.95rem] font-semibold"
             />
           </div>
-        </div>
-
-        <div>
-          <span className="eyebrow">contact</span>
-          <p className="mt-3 max-w-[26ch] text-[0.95rem] leading-relaxed text-muted">
-            The fastest path in is LinkedIn — or browse the code on GitHub.
-          </p>
-        </div>
-
-        <div className="flex flex-col justify-between gap-6 md:items-end">
-          <div className="flex gap-2">
+          <div className="mt-4 flex gap-2">
             <a
               href="https://github.com/TanvirHasanHridoy/"
               target="_blank"
@@ -202,29 +237,114 @@ export default function Footer() {
               <LinkedinMark />
             </a>
           </div>
-          <span className="eyebrow">© 2026 S M Tanvir Hasan Hridoy</span>
+          <span className="eyebrow mt-6 hidden md:block">© 2026 S M Tanvir Hasan Hridoy</span>
+        </div>
+
+        {/* direct-message form — composes a mail draft, no backend */}
+        <div className="md:col-span-2">
+          <span className="eyebrow">direct message</span>
+          <div
+            className="mt-3 rounded-[20px] border border-line p-5 md:p-6"
+            style={{
+              background: 'color-mix(in srgb, var(--c-bg) 74%, transparent)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+            }}
+          >
+            <form onSubmit={onFormSubmit} className="grid gap-3.5">
+              <div className="grid gap-3.5 sm:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="eyebrow">name</span>
+                  <input
+                    name="name"
+                    required
+                    value={form.name}
+                    onChange={setField('name')}
+                    autoComplete="name"
+                    placeholder="Your name"
+                    className="field"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="eyebrow">email</span>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={setField('email')}
+                    autoComplete="email"
+                    placeholder="you@company.com"
+                    className="field"
+                  />
+                </label>
+              </div>
+              <label className="grid gap-2">
+                <span className="eyebrow">message</span>
+                <textarea
+                  name="message"
+                  required
+                  rows={4}
+                  value={form.message}
+                  onChange={setField('message')}
+                  placeholder="What should we build together?"
+                  className="field resize-none"
+                />
+              </label>
+              <div className="flex flex-wrap items-center gap-4">
+                <button
+                  type="submit"
+                  disabled={!inboxReady}
+                  data-cursor={inboxReady ? 'SEND' : ''}
+                  data-cursor-variant="magnetic"
+                  className="pill btn-sweep !py-3.5 !text-[0.9rem] !px-6 disabled:!opacity-40"
+                >
+                  Send message
+                  <Send size={15} />
+                </button>
+                <span className="eyebrow" aria-live="polite">
+                  {inboxReady
+                    ? mailSent
+                      ? 'draft opened in your mail app — hit send there.'
+                      : 'opens a pre-filled mail draft — no backend.'
+                    : 'email form is getting wired — the fastest path right now is LinkedIn.'}
+                </span>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 
-      {/* CONTINUE TO SCROLL portal bar */}
+      {/* mobile legal line — the socials column carries it on md+ */}
+      <span className="eyebrow mt-8 md:hidden">© 2026 S M Tanvir Hasan Hridoy</span>
+
+      {/* CONTINUE TO SCROLL portal bar — tap to open (essential on touch,
+          where the push-past-bottom wheel gesture doesn't exist) */}
       <div
         ref={barWrapRef}
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-5 pb-3 opacity-0 transition-opacity duration-500 md:px-10"
       >
-        <div className="flex items-center justify-between gap-6">
+        <button
+          type="button"
+          onClick={() => setPortalOpen(true)}
+          aria-label="Open the labs portal"
+          data-cursor="OPEN"
+          data-cursor-variant="magnetic"
+          className="pointer-events-auto flex w-full touch-manipulation items-center justify-between gap-4 rounded-full px-2 py-2.5 transition-colors duration-300 hover:bg-[color-mix(in_srgb,var(--c-fg)_6%,transparent)] md:gap-6 md:px-4"
+        >
           <span className="eyebrow">continue to scroll</span>
-          <div
+          <span
             className="relative h-[3px] flex-1 overflow-hidden"
             style={{ background: 'color-mix(in srgb, var(--c-fg) 14%, transparent)', borderRadius: 4 }}
           >
-            <div
+            <span
               ref={barFillRef}
-              className="absolute inset-y-0 left-0 w-full origin-left"
+              className="absolute inset-y-0 left-0 block w-full origin-left"
               style={{ background: 'var(--c-accent)', transform: 'scaleX(0)' }}
             />
-          </div>
+          </span>
           <span className="eyebrow">labs portal</span>
-        </div>
+        </button>
       </div>
     </footer>
   )

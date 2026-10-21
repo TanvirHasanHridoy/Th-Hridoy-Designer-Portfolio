@@ -9,6 +9,12 @@ export const PROFILE = {
   name: 'S M Tanvir Hasan Hridoy',
   alias: 'thridoy°',
   role: 'Full-Stack Developer',
+  /**
+   * Portrait — drop the photo into `public/` keeping this filename
+   * (`public/portrait.jpg`). If the file is missing, the About card
+   * automatically falls back to the monogram tile, so nothing breaks.
+   */
+  photo: '/portrait.jpg',
   location: 'Chemnitz, Germany',
   timezone: 'Europe/Berlin · CET',
   /**
@@ -35,6 +41,14 @@ export const PROFILE = {
     'Recent work leans realtime and applied-AI: an ATS-aware CV engine (JobFlow AI), a live multiplayer sudoku hub with ELO ranking and peer-to-peer voice (co-doku), and a geofenced travel-alarm app for Android and iOS (NapTrip). I like hard, shippable problems: matchmaking, sync, offline storage, PDF generation.',
   ],
 } as const
+
+/**
+ * Contact form destination — the footer's "direct message" form composes a
+ * mailto: draft addressed here (no backend required). Leave '' to keep the
+ * form in wire-me mode: the submit button stays disabled with a hint until
+ * a real address is set. e.g. `export const CONTACT_EMAIL = 'me@example.com'`
+ */
+export const CONTACT_EMAIL = ''
 
 /** tech stack — categorized. Only tools actually used in the public repos. */
 export const STACK: Array<{ title: string; note: string; items: string[] }> = [

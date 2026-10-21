@@ -131,23 +131,28 @@ export function HeroArtifact() {
     material.uniforms.uFade.value = s.fade
     material.visible = s.fade > 0.012
 
+    /* work / lab / contact: release the artifact entirely. The old
+       scale/drift math kept a shrunken remnant floating over the project
+       carousel; skipping the loop and hiding the group removes it for good. */
+    if (activeSection >= 2) {
+      const g = groupRef.current
+      if (g) g.visible = false
+      return
+    }
+
     /* choreographed drift per section */
     const driftX = activeSection === 1 ? -2.4 : 0
-    const driftY = activeSection === 2 ? 2.7 : activeSection === 1 ? 0.35 : Math.sin(t * 0.55) * 0.12
+    const driftY = activeSection === 1 ? 0.35 : Math.sin(t * 0.55) * 0.12
 
     /* tilt toward pointer + slow autonomous spin */
     s.tiltX = damp(s.tiltX, pointerLerped.y * -0.42, 3, dt)
     s.tiltY = damp(s.tiltY, pointerLerped.x * 0.52, 3, dt)
 
-    s.scale = damp(
-      s.scale,
-      (activeSection === 1 ? 0.78 : activeSection >= 2 ? 0.5 : 1.08) * (0.6 + 0.4 * ease),
-      2.4,
-      dt,
-    )
+    s.scale = damp(s.scale, (activeSection === 1 ? 0.78 : 1.08) * (0.6 + 0.4 * ease), 2.4, dt)
 
     const group = groupRef.current
     if (group) {
+      group.visible = true
       group.position.x = damp(group.position.x, driftX + pointerLerped.x * 0.25, 2.4, dt)
       group.position.y = damp(group.position.y, driftY + pointerLerped.y * 0.2, 2.4, dt)
       group.rotation.x = damp(group.rotation.x, s.tiltX, 2.6, dt)

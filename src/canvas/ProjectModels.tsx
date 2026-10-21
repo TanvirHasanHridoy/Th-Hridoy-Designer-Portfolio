@@ -1656,14 +1656,19 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
     }
     car.angle += car.spin * dt
 
-    /* ring-wide pointer tilt + ambient breathing */
+    /* ring-wide pointer tilt + ambient breathing.
+       portrait: lift the whole ring into the free upper half so the bottom
+       context card never covers the objects (mobile bug) */
+    const vwPortrait = scrollStore.viewport.width || window.innerWidth
+    const vhPortrait = scrollStore.viewport.height || window.innerHeight
+    const portrait = vwPortrait / vhPortrait < 0.85
     const reduce = reduced()
     bob.current += dt * 0.6
     const p = scrollStore.pointerLerped
     g.rotation.x = damp(g.rotation.x, reduce ? 0 : -p.y * 0.035, 3, dt)
     g.position.y = damp(
       g.position.y,
-      (reduce ? 0 : Math.sin(bob.current) * 0.03) - 0.32,
+      (reduce ? 0 : Math.sin(bob.current) * 0.03) + (portrait ? 0.55 : -0.32),
       3,
       dt,
     )
@@ -1673,9 +1678,8 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
     const camZ = Math.max(state.camera.position.z, 6)
     const halfW = Math.tan((cam.fov * Math.PI) / 360) * camZ * (cam.aspect || 1)
     const halfH = Math.tan((cam.fov * Math.PI) / 360) * camZ
-    const vw = scrollStore.viewport.width || window.innerWidth
-    const vh = scrollStore.viewport.height || window.innerHeight
-    const portrait = vw / vh < 0.85
+    const vw = vwPortrait
+    const vh = vhPortrait
     const fit = THREE.MathUtils.clamp((halfW * 0.8) / 2.55, 0.48, 1.05)
     const spreadX = THREE.MathUtils.clamp(halfW * 0.66, 4.6, 7.6)
 
@@ -1725,9 +1729,12 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
 
       if (isFocusSlot && focus > 0.001) {
         /* FOCUS — scale up + pan right of the detail panel (desktop) or
-           into the upper half above the bottom sheet (portrait) */
+           into the upper half above the bottom sheet (portrait).
+           portrait subtracts the ring's +0.55 group lift (keeps the
+           world-space upper-half target) and drops a touch lower so the
+           object clears the section heading. */
         const tx = portrait ? 0 : halfW * 0.36
-        const ty = portrait ? halfH * 0.36 : 0.14
+        const ty = portrait ? halfH * 0.36 - 1.3 : 0.14
         const tz = 2.1
         const ts = fit * (portrait ? 0.68 : 1.04) * spin.zoom
         slot.position.set(

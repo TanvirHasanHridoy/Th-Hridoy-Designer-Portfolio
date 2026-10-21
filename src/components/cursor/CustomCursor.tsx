@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { useUI, type CursorVariant } from '../../store/store'
 
@@ -22,6 +22,18 @@ const RING_SIZE: Record<CursorVariant, number> = {
 export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
+
+  /* Touch + pen devices get the native pointer. The fake cursor only exists
+     where a mouse can actually move it — it used to render frozen in place
+     on mobile (motion hook bails early, elements stayed). */
+  const [isFine, setIsFine] = useState(() => window.matchMedia('(pointer: fine)').matches)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: fine)')
+    const onChange = (e: MediaQueryListEvent) => setIsFine(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   const cursor = useUI((s) => s.cursor)
   const setCursor = useUI((s) => s.setCursor)
@@ -80,6 +92,7 @@ export default function CustomCursor() {
 
   /* Ring morph on state change */
   useEffect(() => {
+    if (!isFine) return
     const ring = ringRef.current
     if (!ring) return
     const size = RING_SIZE[cursor.variant]
@@ -89,7 +102,9 @@ export default function CustomCursor() {
       duration: 0.5,
       ease: 'back.out(1.7)',
     })
-  }, [cursor.variant])
+  }, [cursor.variant, isFine])
+
+  if (!isFine) return null
 
   return (
     <div className="no-select" aria-hidden>

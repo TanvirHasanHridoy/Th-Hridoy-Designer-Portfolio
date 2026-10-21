@@ -189,3 +189,32 @@ User request: "This should be a developer portfolio. Dedicated section about me 
 
 ### G. Files touched this session
 src/data/profile.ts (new), src/sections/About.tsx (new), src/sections/Vision.tsx (deleted), src/App.tsx, src/hooks/useSectionTracking.ts (+ onUpdate fix), src/hooks/useAmbientAudio.ts (rewrite), src/components/layout/MenuOverlay.tsx, src/components/layout/Header.tsx, src/sections/Hero.tsx, src/sections/Lab.tsx, src/sections/Footer.tsx, src/sections/FeaturedWork.tsx, src/canvas/CameraRig.tsx (comment), index.html, .gitignore (+qa-shots), qa-shots.mjs (temp QA driver).
+## 3. UPDATE - mobile/UX bug fixes + portrait + contact form (2026-10-21, session 3)
+
+### A. Five reported mobile/UX bugs (fixed + headless-verified)
+1. Custom cursor frozen on touch -> CustomCursor renders null unless `(pointer: fine)` matches (useState + live matchMedia change listener; the motion hook already bailed early but the elements used to persist, motionless).
+2. Models hidden behind the work strip card on mobile -> (a) ProjectModels: idle cover-flow ring lifted on portrait (vw/vh < 0.85): group y -0.32 -> +0.55; focus-mode portrait ty compensated for the lift and dropped to `halfH*0.36 - 1.3` (clears the section heading, hugs the bottom sheet). (b) FeaturedWork strip card compact on mobile: big numeral + description hidden below sm (card ~160px vs 189 desktop), tighter paddings, buttons row full-width.
+3. Footer CONTINUE TO SCROLL dead on mobile (no wheel events) -> touchmove up-swipe charge at the document bottom (dy/2600 per move, same bottom-gate + decay) + the bar is now a real tappable `<button aria-label="Open the labs portal">` that opens the portal directly. Desktop wheel-charge unchanged; click works everywhere.
+4. Interactive blob interfering in the project section -> HeroArtifact early-returns when `activeSection >= 2` and sets `group.visible = false` (the old fade/scale/drift math kept a shrunken remnant peeking over the carousel).
+5. Focus panel not wheel-scrollable + bad scrollbar -> panel container: `data-lenis-prevent` (lenis checks this ATTR BEFORE its stopped-guard, so the panel scrolls natively even while lenis.stop() freezes the page in focus mode), `overscroll-contain`, desktop `md:max-h-[65svh]` (was NONE: panel grew past the viewport, unreachable), mobile 56svh; slim 6px accent scrollbar + `scrollbar-width: thin` scoped to `[data-focus-panel]`. QA probe: real CDP wheel input scrolled scrollTop 0 -> 247 (content 830 / client 583).
+
+### B. Contact form in the footer (mailto composer, no backend)
+- name/email/message -> `window.location = mailto:CONTACT_EMAIL?subject=...&body=...`; subject "Portfolio inquiry - {name}", body = message + signature lines.
+- `src/data/profile.ts`: `export const CONTACT_EMAIL = ''` = wire-me mode: submit disabled + eyebrow hint "email form is getting wired - the fastest path right now is LinkedIn."; setting a real address activates the button with no other change.
+- Footer grid restructured: located | socials (now also holds the icon row + the (c) line on md+) | form glass card `md:col-span-2`; mobile legal line under the grid. New `.field` CSS (14px radius, muted placeholder, accent focus ring); Send icon.
+
+### C. About portrait
+- `PROFILE.photo = '/portrait.jpg'` in profile.ts (drop the file into `public/` to go live).
+- Status card restructured into an id-card head: photo tile 88/104px rounded (real `<img>` with onError -> "TH" monogram fallback tile) + open-to-work pulse pill + display name + "FULL-STACK DEVELOPER . thridoy*" line; located/timezone/github/buttons body unchanged below.
+
+### D. QA (qa-shots.mjs extended)
+- Desktop 1440x900 pass + NEW mobile pass (390x760, hasTouch + isMobile emulation): **0 console/page errors on both**.
+- Verified: cursor elements = 0 on touch; mobile strip height ~160 + description display:none; focus panel scrolled by real wheel; form present with disabled submit + hint; portal opens via desktop click AND mobile tap (aria-hidden flips to false); monogram fallback active until portrait.jpg is dropped; audio ctx running; sound label on.
+- About portrait probe: img absent -> monogram tile renders (expected until the file exists).
+
+### E. Files touched this session
+src/components/cursor/CustomCursor.tsx, src/canvas/HeroArtifact.tsx, src/canvas/ProjectModels.tsx (portrait ring lift + focus-ty compensation), src/sections/FeaturedWork.tsx (compact strip + panel scroll/max-height), src/sections/Footer.tsx (form + touch charge + tappable bar), src/sections/About.tsx (portrait id-card), src/data/profile.ts (photo + CONTACT_EMAIL), src/styles/index.css ([data-focus-panel] scrollbar + .field), qa-shots.mjs (desktop + mobile passes).
+
+### F. QUEUED (user-chosen model rebuilds, next session)
+- Targeted rebuilds per the user's briefs: JobFlow AI = site-faithful dark-violet window + real end-to-end workflow interactivity (scan CV -> guide rows tick 01-04 -> ATS dial spins -> EXACT/ADJACENT/MISSING chips). co-doku = the real board from the site + multiplayer made visible (rival "ghost" board playing alongside, VS/ELO HUD, P2P-voice nod). NapTrip = person asleep in a train chair, window with passing city lights, phone pulsing a GPS direction arrow, geofence -> wake.
+- Portrait: user drops public/portrait.jpg; contact email: set CONTACT_EMAIL in profile.ts.

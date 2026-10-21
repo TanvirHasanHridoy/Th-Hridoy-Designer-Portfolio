@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ArrowUpRight, MapPin, Sparkles } from 'lucide-react'
@@ -16,6 +16,9 @@ gsap.registerPlugin(ScrollTrigger)
  */
 export default function About() {
   const sectionRef = useRef<HTMLElement>(null)
+  /* portrait tile: real photo while it loads fine, monogram fallback if
+     `public/portrait.jpg` isn't dropped in (or fails to load) */
+  const [imgOk, setImgOk] = useState(true)
 
   /* soft per-card reveal as blocks enter the viewport */
   useEffect(() => {
@@ -91,9 +94,39 @@ export default function About() {
             WebkitBackdropFilter: 'blur(12px)',
           }}
         >
-          <div className="p-5 md:p-6">
-            <div className="flex items-center justify-between gap-3">
-              <span className="eyebrow">status</span>
+          {/* id-card head — portrait + identity */}
+          <div className="flex gap-4 p-5 pb-0 md:p-6 md:pb-0">
+            {imgOk ? (
+              <img
+                src={PROFILE.photo}
+                alt={`Portrait of ${PROFILE.name}`}
+                onError={() => setImgOk(false)}
+                className="size-[88px] shrink-0 rounded-[16px] border border-line object-cover md:size-[104px]"
+              />
+            ) : (
+              <div
+                className="grid size-[88px] shrink-0 place-items-center rounded-[16px] border border-line md:size-[104px]"
+                style={{ background: 'color-mix(in srgb, var(--c-accent) 12%, transparent)' }}
+                role="img"
+                aria-label={`Monogram tile for ${PROFILE.name}`}
+              >
+                <span
+                  className="no-select"
+                  aria-hidden
+                  style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 700,
+                    fontSize: '2rem',
+                    letterSpacing: '-0.03em',
+                    color: 'var(--c-accent)',
+                    opacity: 0.55,
+                  }}
+                >
+                  TH
+                </span>
+              </div>
+            )}
+            <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2 py-0.5">
               <span
                 className="flex items-center gap-2 rounded-full border border-line px-2.5 py-1"
                 style={{ color: 'var(--c-fg)' }}
@@ -112,8 +145,25 @@ export default function About() {
                   open to work
                 </span>
               </span>
+              <p
+                className="leading-tight"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: 'clamp(1.05rem, 1.6vw, 1.35rem)',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {PROFILE.name}
+              </p>
+              <p className="eyebrow" style={{ color: 'var(--c-fg)', letterSpacing: '0.08em' }}>
+                {PROFILE.role} · {PROFILE.alias}
+              </p>
             </div>
-            <p className="mt-3 text-[0.95rem] font-semibold leading-snug">{PROFILE.openTo}</p>
+          </div>
+
+          <div className="p-5 md:p-6">
+            <p className="mt-4 text-[0.95rem] font-semibold leading-snug">{PROFILE.openTo}</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               <div>
                 <span className="eyebrow">located</span>

@@ -321,7 +321,7 @@ export default function FeaturedWork() {
         {/* BOTTOM STRIP — idle context card (fades away in focus mode) */}
         <div
           ref={stripRef}
-          className="mt-auto rounded-[22px] border border-line px-5 pb-4 pt-5 md:px-7"
+          className="mt-auto rounded-[22px] border border-line px-4 pb-3 pt-4 md:px-7 md:pb-4 md:pt-5"
           style={{
             background: 'color-mix(in srgb, var(--c-bg) 78%, transparent)',
             backdropFilter: 'blur(14px)',
@@ -333,10 +333,10 @@ export default function FeaturedWork() {
               'opacity .5s var(--e-io), transform .5s var(--e-io)',
           }}
         >
-          <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="flex flex-wrap items-start justify-between gap-4 md:gap-5">
             <div className="flex min-w-0 flex-1 basis-full items-start gap-4 md:basis-auto md:gap-6">
               <span
-                className="no-select leading-none"
+                className="no-select hidden leading-none sm:block"
                 aria-hidden
                 style={{
                   fontFamily: 'var(--font-display)',
@@ -362,13 +362,13 @@ export default function FeaturedWork() {
                   </span>
                 </div>
                 <p className="eyebrow mt-2 truncate">{idleProject.tags.join(' • ')}</p>
-                <p className="mt-2 max-w-[52ch] text-[0.92rem] leading-relaxed text-muted line-clamp-2">
+                <p className="mt-2 hidden max-w-[52ch] text-[0.92rem] leading-relaxed text-muted line-clamp-2 sm:block">
                   {idleProject.description}
                 </p>
               </div>
             </div>
 
-            <div className="flex min-h-[46px] items-center gap-2.5">
+            <div className="flex min-h-[42px] w-full items-center gap-2.5 md:min-h-[46px] md:w-auto">
               {idleProject.demo && (
                 <Magnetic strength={0.45}>
                   <a
@@ -426,7 +426,8 @@ export default function FeaturedWork() {
           <div
             ref={panelRef}
             data-focus-panel
-            className="absolute bottom-4 right-4 z-20 max-h-[52svh] overflow-y-auto rounded-[22px] border border-line px-5 pb-4 pt-5 md:bottom-9 md:right-auto md:top-[27vh] md:max-h-none md:w-[min(36vw,440px)] md:pb-5"
+            data-lenis-prevent=""
+            className="absolute bottom-4 right-4 z-20 max-h-[56svh] overflow-y-auto overscroll-contain rounded-[22px] border border-line px-5 pb-4 pt-5 md:bottom-9 md:right-auto md:top-[27vh] md:max-h-[65svh] md:w-[min(36vw,440px)] md:pb-5"
             style={{
               background: 'color-mix(in srgb, var(--c-bg) 80%, transparent)',
               backdropFilter: 'blur(16px)',
