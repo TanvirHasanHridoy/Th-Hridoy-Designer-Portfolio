@@ -10,7 +10,7 @@ gsap.registerPlugin(ScrollTrigger)
  * Ordered scroll anchors — index matches `scrollStore.activeSection` and the
  * camera choreography in `CameraRig`.
  */
-export const SECTION_SELECTORS = ['#hero', '#vision', '#work', '#lab', '#contact'] as const
+export const SECTION_SELECTORS = ['#hero', '#about', '#work', '#lab', '#contact'] as const
 
 /**
  * Watches which section owns the viewport middle and writes the index into
@@ -59,6 +59,15 @@ export function useSectionTracking(): void {
           },
         }),
       )
+    })
+
+    /* catch-up: teleport scrolls (hash restore, instant scrollBy) cross
+       several ranges in one update and never fire onToggle — recompute the
+       owner from live dependency state on every scroll update as well */
+    ScrollTrigger.create({
+      start: 0,
+      end: 'max',
+      onUpdate: () => recomputeOwner(),
     })
 
     /* Sync initial state: triggers whose range already contains the restored

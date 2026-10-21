@@ -73,11 +73,18 @@ function createAmbience(): Ambience {
 
   return {
     start: () => {
-      if (ctx.state === 'suspended') void ctx.resume()
+      if (ctx.state === 'closed') return
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {
+          /* browsers can refuse until a gesture lands — the pointerdown
+             insurance in useAmbientAudio re-arms the fade afterwards */
+        })
+      }
       master.gain.cancelScheduledValues(ctx.currentTime)
-      master.gain.setTargetAtTime(0.035, ctx.currentTime, 0.9)
+      master.gain.setTargetAtTime(0.06, ctx.currentTime, 0.9)
     },
     stop: () => {
+      if (ctx.state === 'closed') return
       master.gain.cancelScheduledValues(ctx.currentTime)
       master.gain.setTargetAtTime(0, ctx.currentTime, 0.35)
     },
@@ -99,13 +106,25 @@ export function useAmbientAudio(enabled: boolean): void {
   const ambRef = useRef<Ambience | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
-    ambRef.current ??= createAmbience()
-    ambRef.current.start()
+    /* A context per enable: StrictMode's mount/unmount pass closes the first
+       context, so rebasing on an old ref here would play into a dead node —
+       the classic "toggle does nothing" bug. Fresh ctx, fully owned. */
+    const amb = enabled ? createAmbience() : null
+    ambRef.current = amb
+    amb?.start()
+
+    return () => {
+      amb?.dispose()
+      ambRef.current = null
+    }
   }, [enabled])
 
+  /* autoplay-policy insurance: browsers can hold a context suspended until a
+     real user gesture has landed; re-arm the fade on the first pointer event */
   useEffect(() => {
-    const amb = ambRef.current
-    return () => amb?.dispose()
-  }, [])
+    if (!enabled) return
+    const kick = () => ambRef.current?.start()
+    document.addEventListener('pointerdown', kick, { once: true })
+    return () => document.removeEventListener('pointerdown', kick)
+  }, [enabled])
 }

@@ -52,7 +52,7 @@ export default function Lab() {
           <MaskedLines
             as="p"
             start="top 88%"
-            lines={['Step into the sandbox and', 'let your curiosity run wild']}
+            lines={['Throw things. The physics runs', 'live inside this page']}
             className="max-w-[16em]"
             style={{ fontSize: 'clamp(1.15rem, 1.8vw, 1.7rem)', fontWeight: 600 }}
           />

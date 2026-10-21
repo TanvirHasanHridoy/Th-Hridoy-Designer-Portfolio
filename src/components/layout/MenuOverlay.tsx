@@ -8,7 +8,7 @@ import { GithubMark, LinkedinMark, XMark } from '../ui/BrandIcons'
 
 const MENU_ITEMS = [
   { index: '01', label: 'Home', target: '#hero' },
-  { index: '02', label: 'About', target: '#vision' },
+  { index: '02', label: 'About', target: '#about' },
   { index: '03', label: 'Projects', target: '#work' },
   { index: '04', label: 'Labs', target: '#lab' },
   { index: '05', label: 'Contact', target: '#contact' },
@@ -17,7 +17,6 @@ const MENU_ITEMS = [
 const SOCIALS = [
   { label: 'GitHub', href: 'https://github.com/TanvirHasanHridoy/' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/th-hridoy/' },
-  { label: 'X / Twitter', href: 'https://x.com/' },
 ] as const
 
 /**

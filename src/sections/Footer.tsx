@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
 import Magnetic from '../components/ui/Magnetic'
 import RollLink from '../components/ui/RollLink'
-import { GithubMark, LinkedinMark, XMark } from '../components/ui/BrandIcons'
+import { GithubMark, LinkedinMark } from '../components/ui/BrandIcons'
 import { useUI } from '../store/store'
 import { damp } from '../store/scrollStore'
 
@@ -115,7 +115,7 @@ export default function Footer() {
         <MaskedLines
           as="h2"
           start="top 86%"
-          lines={['Is Your Next Project', 'Ready to Go Wild?']}
+          lines={["Let's Build", 'Something Great.']}
           className="display-xl mt-6"
         />
         <div className="mt-10 flex flex-wrap items-center gap-5">
@@ -128,11 +128,11 @@ export default function Footer() {
               data-cursor-variant="view"
               className="pill btn-sweep btn-blank !px-9 !py-5 !text-[1.05rem]"
             >
-              Let&apos;s build together!
+              Say hi!
               <ArrowUpRight size={18} />
             </a>
           </Magnetic>
-          <span className="eyebrow">open to working • student and entry roles</span>
+          <span className="eyebrow">open to working-student & entry-level roles in Germany</span>
         </div>
       </div>
 
@@ -167,21 +167,13 @@ export default function Footer() {
               rel="noreferrer"
               className="text-[0.95rem] font-semibold"
             />
-            <RollLink
-              label="X / Twitter"
-              href="https://x.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[0.95rem] font-semibold"
-            />
           </div>
         </div>
 
         <div>
           <span className="eyebrow">contact</span>
           <p className="mt-3 max-w-[26ch] text-[0.95rem] leading-relaxed text-muted">
-            The fastest way in is LinkedIn — full profile, projects and open to
-            work status all live there.
+            The fastest path in is LinkedIn — or browse the code on GitHub.
           </p>
         </div>
 
@@ -208,17 +200,6 @@ export default function Footer() {
               className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
             >
               <LinkedinMark />
-            </a>
-            <a
-              href="https://x.com/"
-              target="_blank"
-              rel="noreferrer"
-              data-cursor-variant="magnetic"
-              data-cursor=""
-              aria-label="X"
-              className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
-            >
-              <XMark />
             </a>
           </div>
           <span className="eyebrow">© 2026 S M Tanvir Hasan Hridoy</span>

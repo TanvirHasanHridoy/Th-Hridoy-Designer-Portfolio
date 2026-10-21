@@ -25,7 +25,7 @@ function Monogram() {
         <span className="hidden flex-col leading-tight md:flex">
           <span className="text-[13px] font-semibold tracking-tight">S M Tanvir Hasan Hridoy</span>
           <span className="eyebrow" style={{ letterSpacing: '0.08em' }}>
-            creative developer
+            full-stack developer
           </span>
         </span>
       </a>

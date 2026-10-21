@@ -145,3 +145,47 @@ Theme tokens, cursor, header, menu, preloader, persistent canvas, camera rig, He
 ### Env/OS notes
 - Windows, PowerShell. Multi-line writes: use the write tool (CRLF handled). Careful: `edit` oldString must match file EXACTLY â€” the tool does fuzzy extra (quotes/dashes) retries; safest to re-`read` the file section first when match fails.
 - npm is fast here; node v22.
+
+---
+
+## 3. UPDATE — developer-portfolio restructure (2026-10-21, session 2)
+
+User request: "This should be a developer portfolio. Dedicated section about me (bio, categorized tech stack, experience timeline). Remove unnecessary texts. Sound not working. Project cards should be the same size. Clear structure/UI-UX + mobile friendly."
+
+### A. Vision section REPLACED by the dedicated About section
+- src/sections/Vision.tsx DELETED (fluffy "Bold Engineering" + showreel reel). Same index in the section order, so the camera choreography (CameraRig FRAMES[1], physics-pit hooks at index 3) keeps working — only the comment label changed to "about".
+- New src/data/profile.ts — the single source of truth the user can edit:
+  - PROFILE: name/alias/role/location/timezone/tagline/openTo (mirrors the GitHub headline bi?o), links, githubStats badges (18 public repos / Pull-Shark ×2 / Arctic Code Vault / shipping since 2019), 2-paragraph bio.
+  - STACK: 8 categorised cards (Languages, Frontend, Backend & Data, Realtime & Media, Mobile, AI & Integrations, Motion & 3D, Workflow) — only tools verifiably used in public repos; no ESLint/other unverified claims.
+  - TIMELINE: 5 milestone rows (2026, 2025 flagship builds, 2024 Chemnitz platform, 2023 first portfolio + e-shop, 2019–22 start) reconstructed from public GitHub repo creation/push dates — labelled "milestones from the public GitHub history".
+- LinkedIn is auth-walled (webfetch 999) — data built from the GitHub API (/users/TanvirHasanHridoy/repos) + the shipped projects; the About section links LinkedIn rather than quoting it.
+- New src/sections/About.tsx (#about, 01): display heading ("Full-Stack Developer." + outlined "Based in Chemnitz, DE."), tagline col, bio col, glass **status card** (open-to-work pulse dot, located/timezone, GitHub badges, GitHub/LinkedIn pills), 8-card responsive stack grid (sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4), <ol> timeline with accent-rail dots (mobile-safe padding), closing LinkedIn offer line. data-about-card per-card gsap reveal.
+- Wiring: App.tsx imports/renders About; useSectionTracking SECTION_SELECTORS = ['#hero','#about','#work','#lab','#contact']; MenuOverlay item 02 = About ? #about; heading/eyebrows renumbered 01 about / 02 work / 03 lab / 04 contact.
+
+### B. Copy trims (unnecessary text removal)
+- Hero statement ? "I build full-stack web apps, / real-time 3D graphics & / interactive experiences."; eyebrow ? "thridoy° — full-stack engineering"; name chip kept.
+- Lab sub copy ? "Throw things. The physics runs / live inside this page".
+- Footer CTA ? "Let's Build / Something Great." + "Say hi!" pill; eyebrow ? "open to working-student & entry-level roles in Germany"; contact col ? "The fastest path in is LinkedIn — or browse the code on GitHub."
+- Dead links removed: X/Twitter (menu overlay socials AND footer RollLink row AND footer icon row; XMark import dropped).
+- Positioning updated: index.html title/meta/OG ? "Full-Stack Developer & 3D Engineer" (old file had mojibake ? encoded chars; rewritten clean UTF-8); header Monogram subtitle ? "full-stack developer"; CameraRig frame comment.
+
+### C. Sound fix (root cause + rewrite)
+- Bug: main.tsx has StrictMode ? first mount created the AudioContext, unmount DISPOSED (closed) it, remount reused the closed ref (mbRef.current ??= createAmbience() never recreated) ? toggle played into a dead context = permanent silence in dev; autoplay-suspend insurance missing entirely.
+- useAmbientAudio.ts rewritten: fresh ctx per enable (effect keyed on enabled, dispose+null in cleanup), start()/stop() guard ctx.state === 'closed', esume().catch(() => {}), one-shot pointerdown re-arm listener while enabled, master target 0.035 ? 0.06.
+- Verified end-to-end headless (instrumented window.AudioContext via addInitScript): exactly **1 context, state "running"**, toggle label flips ON, 0 console errors.
+
+### D. Featured Work idle strip card — same size for all three projects
+- Left group got min-w-0 flex-1 basis-full md:basis-auto + inner min-w-0; tag row now 	runcate (single line); description -webkit-line-clamp inline block replaced by Tailwind line-clamp-2; actions row got min-h-[46px] (NapTrip has no demo button but keeps pill height).
+- Measured headless across the 3 dots: card heights **{p0:189, p1:189, p2:189}** — identical.
+
+### E. REAL(scroll-tracking) bug found + fixed (qa artifact hunt)
+- QA teleport-scrolls exposed a pre-existing stale-state bug: useSectionTracking recomputed scrollStore.activeSection ONLY from onToggle — triggers already active at teleport/restore positions never toggle ? section stayed stale (hero at #about, lab at footer, footer never reached 4). Bottom section can never END (its 'bottom 40%' line is beyond max scroll) but scrolling back up past its start fires correctly, so only the recompute path needed a catch-up.
+- Fix: added ScrollTrigger.create({ start: 0, end: 'max', onUpdate: recomputeOwner() }) in useSectionTracking — every scroll update recomputes deepmost-active. Verified: hero=0, about zone=1, work=2 (all dot states), footer=4 via teleport AND natural wheel.
+
+### F. QA tooling + artifacts
+- The desktop-browser tab lost its OS window mid-session (user minimized; screenshot tool requires a visible tab) ? switched to **headless playwright-core** QA: qa-shots.mjs (temp, gitignored) drives chromium-1223 from %LOCALAPPDATA%\ms-playwright with --enable-unsafe-swiftshader + autoplay unlocked; captures 10 stops incl. natural-wheel footer, strip-height metrics, audio ctx probe; artifacts in qa-shots/ (gitignored). NOTE: import.meta.url pathname %-encodes spaces — use ileURLToPath.
+- Full run: **0 console errors/pageerrors**, audio verified, cards equal, waypoints correct.
+- NOT verifiable by tooling: OS-window mobile viewport — responsive CSS was reviewed manually (About grid stacks, strip card wraps via asis-full, timeline padding, focus-panel bottom sheet). User should spot-check on a phone.
+
+### G. Files touched this session
+src/data/profile.ts (new), src/sections/About.tsx (new), src/sections/Vision.tsx (deleted), src/App.tsx, src/hooks/useSectionTracking.ts (+ onUpdate fix), src/hooks/useAmbientAudio.ts (rewrite), src/components/layout/MenuOverlay.tsx, src/components/layout/Header.tsx, src/sections/Hero.tsx, src/sections/Lab.tsx, src/sections/Footer.tsx, src/sections/FeaturedWork.tsx, src/canvas/CameraRig.tsx (comment), index.html, .gitignore (+qa-shots), qa-shots.mjs (temp QA driver).

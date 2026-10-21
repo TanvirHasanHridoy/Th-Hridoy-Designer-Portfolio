@@ -12,3 +12,8 @@ dist/
 # misc
 .DS_Store
 Thumbs.db
+
+# qa snapshots (local browser-test artifacts)
+qa-shots/
+qa-shots.mjs
+

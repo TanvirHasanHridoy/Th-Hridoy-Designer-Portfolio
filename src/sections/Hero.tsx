@@ -11,7 +11,7 @@ export default function Hero() {
       {/* top row — whitespace with a tiny version marker far right */}
       <div className="flex items-start justify-between">
         <span className="eyebrow opacity-0 md:opacity-100">
-          thridoy° — webgl &amp; engineering
+          thridoy° — full-stack engineering
         </span>
         <span className="eyebrow text-right">
           portfolio — 2026
@@ -40,8 +40,8 @@ export default function Hero() {
           stagger={0.085}
           start="top 86%"
           lines={[
-            'I craft 3D visual storytelling,',
-            'high-performance web apps &',
+            'I build full-stack web apps,',
+            'real-time 3D graphics &',
             'interactive experiences.',
           ]}
           className="display-xl"

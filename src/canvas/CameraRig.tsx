@@ -11,7 +11,7 @@ import { useUI } from '../store/store'
  */
 const FRAMES: Array<{ position: [number, number, number]; look: [number, number, number] }> = [
   { position: [0, 0.1, 8], look: [0, 0.1, 0] }, // hero
-  { position: [1.6, 0.4, 9.2], look: [-1.2, 0.4, 0] }, // vision
+  { position: [1.6, 0.4, 9.2], look: [-1.2, 0.4, 0] }, // about
   { position: [0, 0.4, 12.2], look: [0, 0.15, 0] }, // work carousel
   { position: [0, 0.1, 7.6], look: [0, -0.2, 0] }, // physics pit
   { position: [0, -0.6, 10.5], look: [0, -0.6, 0] }, // footer portal

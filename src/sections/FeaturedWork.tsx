@@ -334,7 +334,7 @@ export default function FeaturedWork() {
           }}
         >
           <div className="flex flex-wrap items-start justify-between gap-5">
-            <div className="flex items-start gap-4 md:gap-6">
+            <div className="flex min-w-0 flex-1 basis-full items-start gap-4 md:basis-auto md:gap-6">
               <span
                 className="no-select leading-none"
                 aria-hidden
@@ -349,7 +349,7 @@ export default function FeaturedWork() {
               >
                 {idleProject.index}
               </span>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   <h3
                     className="display-md"
@@ -361,22 +361,14 @@ export default function FeaturedWork() {
                     {idleProject.year}
                   </span>
                 </div>
-                <p className="eyebrow mt-2">{idleProject.tags.join(' • ')}</p>
-                <p
-                  className="mt-2 max-w-[52ch] text-[0.92rem] leading-relaxed text-muted"
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
+                <p className="eyebrow mt-2 truncate">{idleProject.tags.join(' • ')}</p>
+                <p className="mt-2 max-w-[52ch] text-[0.92rem] leading-relaxed text-muted line-clamp-2">
                   {idleProject.description}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex min-h-[46px] items-center gap-2.5">
               {idleProject.demo && (
                 <Magnetic strength={0.45}>
                   <a

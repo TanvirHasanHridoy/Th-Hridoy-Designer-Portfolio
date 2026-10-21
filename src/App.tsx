@@ -11,7 +11,7 @@ import PortalOverlay from './components/layout/PortalOverlay'
 import Preloader from './components/layout/Preloader'
 import { SceneCanvas } from './canvas/SceneCanvas'
 import Hero from './sections/Hero'
-import Vision from './sections/Vision'
+import About from './sections/About'
 import FeaturedWork from './sections/FeaturedWork'
 import Lab from './sections/Lab'
 import Footer from './sections/Footer'
@@ -48,9 +48,9 @@ export default function App() {
       <PortalOverlay />
 
       <main className="relative z-10">
-        {/* DOM sections — anchors: #hero, #vision, #work, #lab, #contact */}
+        {/* DOM sections — anchors: #hero, #about, #work, #lab, #contact */}
         <Hero />
-        <Vision />
+        <About />
         <FeaturedWork />
         <Lab />
         <Footer />
