@@ -252,3 +252,62 @@ src/canvas/ProjectModels.tsx, src/sections/FeaturedWork.tsx, src/components/layo
 ### G. Still queued (user-supplied)
 - `public/portrait.jpg` for the About id-card (monogram fallback is live).
 - `CONTACT_EMAIL` in src/data/profile.ts to activate the footer form (submit stays disabled + hint until set).
+
+## 5. UPDATE - Featured Work responsive review: models + card consistency (2026-10-22, session 5)
+
+### A. Review scope
+- Reviewed the whole Featured Work section before coding at 10 viewports: 2560x1440, 1920x1080, 1440x900, 1024x768, 834x1112, 768x1024, 430x932, 390x844, 360x800, 320x568.
+- For each size: idle carousel plus focus mode for all three projects (JobFlow, Sudoku Showdown, NapTrip), console/page errors, strip-card geometry, focus-panel geometry.
+
+### B. Before findings
+- Desktop/tablet landscape: models were fully visible, but JobFlow's card was 24px taller (220/196/196 at XL/L, 213/189/189 at 1440, 201/177/177 at 1024) because its description rendered a third line while the others clamped to two.
+- Portrait tablets 834x1112 and 768x1024: focus still used the desktop side panel. The enlarged model overlapped the heading/panel, and NapTrip's right edge was clipped. (Before cards: 265/241/241.)
+- Phones 430/390/360: models were fully visible; cards were 160/160/159. NapTrip had no demo link, so its "Open project" action disappeared entirely.
+- 320x568: cards were 160/183/159 because "Sudoku Showdown" wrapped; the heading also wrapped to two lines and the idle model overlapped it.
+
+### C. Changes
+- **Shared focus layout switch** (`SHEET_LAYOUT_QUERY = '(max-width: 767.98px), (max-aspect-ratio: 85/100)'`): phones and portrait tablets now use the bottom-sheet composition; desktops/landscape tablets keep the side panel. The header is hidden whenever focus opens in sheet layout.
+- **Portrait-tablet sheet**: centered `max-w-[640px]`, `left/right-4`, `md:max-h-[52svh]` (phones stay 56svh), bottom 16px above the viewport. Panel top: 518px @834, 476px @768.
+- **Model framing**: portrait focus scale is now `0.74` for widths >=700px (tablets) and stays `0.64` on phones; the larger tablet band is filled without touching the sheet. All three models clear the panel (including Sudoku's numpad).
+- **Card consistency**: description moved into an `sm:block` wrapper with an inner `line-clamp-2`; title row gap tightened to 8px on phones; title min reduced to 1.2rem. All cards now equal height at every tested viewport, including 320.
+- **Open project action**: one `OpenProjectButton` used by both the strip and focus panel. Projects with a demo keep the Magnetic link; NapTrip renders a real disabled button with identical footprint/position (`aria-disabled`, label "Open project — live demo coming soon", title hint, opacity 45). GitHub / View source stays aligned to its right.
+- **320 heading**: local `.display-lg.work-heading` rule at <=340px keeps "Featured Work" on one line (33.6px at 320) without affecting larger screens.
+
+### D. After metrics (card heights: JobFlow / Sudoku / NapTrip)
+| viewport | before | after |
+| --- | --- | --- |
+| 2560x1440 | 220 / 196 / 196 | 196 / 196 / 196 |
+| 1920x1080 | 220 / 196 / 196 | 196 / 196 / 196 |
+| 1440x900 | 213 / 189 / 189 | 189 / 189 / 189 |
+| 1024x768 | 201 / 177 / 177 | 177 / 177 / 177 |
+| 834x1112 | 265 / 241 / 241 | 241 / 241 / 241 |
+| 768x1024 | 265 / 241 / 241 | 241 / 241 / 241 |
+| 430x932 | 160 / 160 / 159 | 160 / 160 / 160 |
+| 390x844 | 160 / 160 / 159 | 160 / 160 / 160 |
+| 360x800 | 160 / 160 / 159 | 160 / 160 / 160 |
+| 320x568 | 160 / 183 / 159 | 160 / 160 / 160 |
+
+- Portrait focus panels: 834 -> y518 h578; 768 -> y476 h532; models sit fully above. 1024 landscape keeps the side panel (y207 h499). Phones: 430 y394/h522, 390 y355/h473, 360 y336/h448, 320 y234/h318.
+- NapTrip disabled button occupies exactly the same x/y/158x45 footprint as JobFlow/Sudoku's live link; GitHub button remains at the same x on all three.
+- 0 console/page errors across all 40 screenshots.
+
+### E. QA
+- `npx tsc -b` / `tsc --noEmit` and `npm run build` clean.
+- Keyboard: skip link -> work, next Tab -> arena; Enter opens focus and focuses Close; Tab reaches the first feature; Escape returns focus to the arena. Verified at 1440x900, 834x1112 and 390x844. Header hidden in sheet-layout focus and restored after close.
+- Portal/menu focus traps untouched and still pass (a11y-check2: portal scroll 274px, focus return, 0 errors).
+- Playwright: SwiftShader headless Chromium; touch/DPR2 for tablet/phone viewports.
+
+### F. Proof
+- `C:\Users\thhri\AppData\Local\Temp\opencode\sizes-proof\before\` — 10 pre-change contact sheets (idle + focus 0/1/2) and `metrics.json`.
+- `C:\Users\thhri\AppData\Local\Temp\opencode\sizes-proof\after\` — final full-screen shots, canvas crops, `report.json`, and `sheets/` 2x2 contact sheets.
+- `C:\Users\thhri\AppData\Local\Temp\opencode\sizes-proof\cards\` — 1440 strip-card crops and NapTrip focus-panel bottom with the disabled button.
+- Each contact sheet tile order: top-left idle, top-right focus JobFlow, bottom-left focus Sudoku, bottom-right focus NapTrip.
+
+### G. Files touched this session
+src/sections/FeaturedWork.tsx, src/canvas/ProjectModels.tsx, src/styles/index.css, HANDBOOK.md.
+
+### H. Notes / still queued
+- No external 3D assets introduced; all model textures remain CanvasTextures.
+- 320x568 header nav overflow (Menu pill slightly clipped) is pre-existing and untouched; the work heading/model collision at 320 is fixed.
+- Still waiting on user-supplied `public/portrait.jpg` and `CONTACT_EMAIL`.
+- Committed locally only; not pushed.

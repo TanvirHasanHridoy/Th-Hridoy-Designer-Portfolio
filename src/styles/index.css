@@ -109,6 +109,12 @@ body {
   line-height: 0.98;
   letter-spacing: -0.03em;
 }
+/* 320-class phones: keep "Featured Work" on one line, clear of the models */
+@media (max-width: 340px) {
+  .display-lg.work-heading {
+    font-size: clamp(2.1rem, 10.5vw, 2.4rem);
+  }
+}
 .display-md {
   font-family: var(--font-display);
   font-weight: 600;

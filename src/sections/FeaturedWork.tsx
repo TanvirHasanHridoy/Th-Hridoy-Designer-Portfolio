@@ -19,6 +19,29 @@ const FEATURE_ACTIONS: Record<ProjectId, string[]> = {
   'naptrip': ['alarm', 'sprint', 'arrivals', 'pin', 'favourites'],
 }
 
+/**
+ * Focus layout switch. Phones and portrait tablets use the bottom-sheet
+ * composition (model in the upper band, panel from the bottom); landscape
+ * tablets and desktops keep the side panel. The portrait arm mirrors the
+ * aspect test in `ProjectModels` (aspect < 0.85) that drives model framing;
+ * the width arm covers the phone layouts.
+ */
+const SHEET_LAYOUT_QUERY = '(max-width: 767.98px), (max-aspect-ratio: 85/100)'
+
+function useSheetLayout() {
+  const [sheet, setSheet] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia(SHEET_LAYOUT_QUERY).matches,
+  )
+  useEffect(() => {
+    const mq = window.matchMedia(SHEET_LAYOUT_QUERY)
+    const sync = () => setSheet(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+  return sheet
+}
+
 /** tween the turntable to bring project i to the front (shortest wrap-around) */
 const tweenAngleTo = (i: number) => {
   const car = scrollStore.carousel
@@ -55,6 +78,7 @@ export default function FeaturedWork() {
   const wasFocusOpen = useRef(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [arenaKeyboard, setArenaKeyboard] = useState(false)
+  const sheetLayout = useSheetLayout()
 
   const idleProject = PROJECTS[featuredIndex] ?? PROJECTS[0]
   const focusedProject = focusIndex != null ? PROJECTS[focusIndex] ?? PROJECTS[0] : null
@@ -323,14 +347,14 @@ export default function FeaturedWork() {
         className="absolute inset-0 sticky top-0 flex h-[100svh] flex-col px-5 pb-6 pt-[14vh] md:px-10"
       >
         {/* header — compact so the object carousel keeps the stage */}
-        <div className={`flex flex-wrap items-end justify-between gap-4${focusOpen ? ' max-md:hidden' : ''}`}>
+        <div className={`flex flex-wrap items-end justify-between gap-4${focusOpen ? (sheetLayout ? ' hidden' : ' max-md:hidden') : ''}`}>
           <div>
             <span className="eyebrow">02 — selected works</span>
             <MaskedLines
               as="h2"
               start="top 84%"
               lines={['Featured Work']}
-              className="display-lg mt-4"
+              className="display-lg work-heading mt-4"
             />
           </div>
           <p className="hidden max-w-[36ch] pb-2 text-sm leading-relaxed text-muted md:block">
@@ -420,10 +444,10 @@ export default function FeaturedWork() {
                 {idleProject.index}
               </span>
               <div className="min-w-0">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <h3
                     className="display-md"
-                    style={{ fontSize: 'clamp(1.45rem, 2.6vw, 2.4rem)' }}
+                    style={{ fontSize: 'clamp(1.2rem, 2.6vw, 2.4rem)' }}
                   >
                     {idleProject.title}
                   </h3>
@@ -432,28 +456,16 @@ export default function FeaturedWork() {
                   </span>
                 </div>
                 <p className="eyebrow mt-2 truncate">{idleProject.tags.join(' • ')}</p>
-                <p className="mt-2 hidden max-w-[52ch] text-[0.92rem] leading-relaxed text-muted line-clamp-2 sm:block">
-                  {idleProject.description}
-                </p>
+                <div className="mt-2 hidden sm:block">
+                  <p className="max-w-[52ch] text-[0.92rem] leading-relaxed text-muted line-clamp-2">
+                    {idleProject.description}
+                  </p>
+                </div>
               </div>
             </div>
 
             <div className="flex min-h-[42px] w-full items-center gap-2.5 md:min-h-[46px] md:w-auto">
-              {idleProject.demo && (
-                <Magnetic strength={0.45}>
-                  <a
-                    href={idleProject.demo}
-                    target="_blank"
-                    rel="noreferrer"
-                    data-cursor="OPEN"
-                    data-cursor-variant="magnetic"
-                    className="pill btn-sweep !px-5 !py-3.5 !text-[0.9rem]"
-                  >
-                    Open project
-                    <ArrowUpRight size={15} />
-                  </a>
-                </Magnetic>
-              )}
+              <OpenProjectButton project={idleProject} />
               <ProjectGithubButton
                 label="GitHub"
                 href={idleProject.href}
@@ -505,7 +517,11 @@ export default function FeaturedWork() {
             tabIndex={0}
             role="region"
             aria-label={`${focusedProject.title} — project details`}
-            className="absolute bottom-4 right-4 z-20 max-h-[56svh] overflow-y-auto overscroll-contain rounded-[22px] border border-line px-5 pb-4 pt-5 md:bottom-9 md:right-auto md:top-[27vh] md:max-h-[65svh] md:w-[min(36vw,440px)] md:pb-5"
+            className={`absolute z-20 overflow-y-auto overscroll-contain rounded-[22px] border border-line px-5 pb-4 pt-5 ${
+              sheetLayout
+                ? 'bottom-4 left-4 right-4 mx-auto max-h-[56svh] max-w-[640px] md:max-h-[52svh] md:pb-5'
+                : 'bottom-9 right-auto top-[27vh] max-h-[65svh] w-[min(36vw,440px)] md:pb-5'
+            }`}
             style={{
               background: 'color-mix(in srgb, var(--c-bg) 80%, transparent)',
               backdropFilter: 'blur(16px)',
@@ -536,7 +552,47 @@ function ProjectGithubButton({ label, href, title }: { label: string; href: stri
   )
 }
 
-/** Focus mode — left detail panel: tech stack, headline features and links */
+/**
+ * Primary project action. Projects without a live demo keep the same button
+ * footprint (just disabled) so the card and panel structure never shift.
+ */
+function OpenProjectButton({ project }: { project: Project }) {
+  const className = 'pill btn-sweep !px-5 !py-3.5 !text-[0.9rem]'
+
+  if (!project.demo) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-disabled="true"
+        aria-label="Open project — live demo coming soon"
+        title="Live demo coming soon"
+        className={`${className} cursor-not-allowed opacity-45`}
+      >
+        Open project
+        <ArrowUpRight size={15} />
+      </button>
+    )
+  }
+
+  return (
+    <Magnetic strength={0.45}>
+      <a
+        href={project.demo}
+        target="_blank"
+        rel="noreferrer"
+        data-cursor="OPEN"
+        data-cursor-variant="magnetic"
+        className={className}
+      >
+        Open project
+        <ArrowUpRight size={15} />
+      </a>
+    </Magnetic>
+  )
+}
+
+/** Focus mode — detail panel: side panel on desktop, bottom sheet on phones/portrait tablets */
 function FocusPanel({
   project,
   featuredIndex,
@@ -655,21 +711,7 @@ function FocusPanel({
         </ul>
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          {project.demo && (
-            <Magnetic strength={0.45}>
-              <a
-                href={project.demo}
-                target="_blank"
-                rel="noreferrer"
-                data-cursor="OPEN"
-                data-cursor-variant="magnetic"
-                className="pill btn-sweep !px-5 !py-3.5 !text-[0.9rem]"
-              >
-                Open project
-                <ArrowUpRight size={15} />
-              </a>
-            </Magnetic>
-          )}
+          <OpenProjectButton project={project} />
           <a
             href={project.href}
             target="_blank"

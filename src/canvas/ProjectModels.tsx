@@ -2357,7 +2357,10 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
         const tx = portrait ? 0 : halfW * 0.36
         const ty = portrait ? halfH * 0.36 - 0.2 : 0.14
         const tz = 2.1
-        const ts = fit * (portrait ? 0.64 : 1.04) * spin.zoom
+        /* portrait tablets have more band above the bottom sheet than phones,
+           so let the focused object fill it without clipping the panel */
+        const focusZoom = portrait ? (vwPortrait >= 700 ? 0.74 : 0.64) : 1.04
+        const ts = fit * focusZoom * spin.zoom
         slot.position.set(
           damp(slot.position.x, tx, 3.4, dt),
           damp(slot.position.y, ty, 3.4, dt),
