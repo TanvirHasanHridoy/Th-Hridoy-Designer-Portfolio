@@ -218,3 +218,37 @@ src/components/cursor/CustomCursor.tsx, src/canvas/HeroArtifact.tsx, src/canvas/
 ### F. QUEUED (user-chosen model rebuilds, next session)
 - Targeted rebuilds per the user's briefs: JobFlow AI = site-faithful dark-violet window + real end-to-end workflow interactivity (scan CV -> guide rows tick 01-04 -> ATS dial spins -> EXACT/ADJACENT/MISSING chips). co-doku = the real board from the site + multiplayer made visible (rival "ghost" board playing alongside, VS/ELO HUD, P2P-voice nod). NapTrip = person asleep in a train chair, window with passing city lights, phone pulsing a GPS direction arrow, geofence -> wake.
 - Portrait: user drops public/portrait.jpg; contact email: set CONTACT_EMAIL in profile.ts.
+
+## 4. UPDATE - project model rebuilds + portal cursor + keyboard accessibility (2026-10-22, session 4)
+
+### A. The three 3D models rebuilt (all CanvasTexture, no external assets)
+- **JobFlow AI**: site-faithful dark-violet app window (logo bar, step rail, 4 workflow rows, outcome footer) + sliding CV sheet with scan line. 5.4s loop: CV slides in -> rows 01-04 tick behind a highlight band -> ATS dial needle sweeps -2.1 to 92 -> EXACT / ADJACENT / MISSING chips cascade. Feature rows map to score / chips / doc / kanban / pdf; hovering row 2 (DIN templates) also reveals the CV.
+- **co-doku (Sudoku Showdown)**: real 9x9 board texture with white givens, mint player digits, hover cell; a second rival board angled behind-right keeps filling amber digits with a hopping cursor; SOLVER_2295 VS RIVAL_3948 ELO scoreboard, Easy/timer/lives/Exit strip, numpad with counts and a P2P-voice equaliser pill. Board now uses a generated valid 30-given puzzle with a unique solution (player + rival + engine hints all come from the solved grid), so it is actually solvable. Actions: elo / sabotage (ink blots) / voice (swell + EQ) / engine (solver hints) / resync (flash).
+- **NapTrip**: night-train compartment - scrolling city-light texture, moon/stars, VBB "BERLIN HBF / DELAYED +8" board; reclined seat, sleeping passenger with breathing + wake jolt, neck pillow, blanket, arm on the armrest; larger phone with a live GPS map, pulsing arrow/rings, geofence pin, alarm clock and a rail with chevrons. Actions: alarm / sprint / arrivals / pin / favourites.
+
+### B. Mobile focus framing
+- Focus mode on portrait hides the section heading (`max-md:hidden`) so the object owns the stage; ProjectModels lifts the object to `halfH*0.36 - 0.2` and scales it `0.64` (was `0.68`, `- 1.3`). All three objects now sit fully above the bottom sheet at 390x760 instead of being clipped mid-board/window.
+- Focus panel remains a 56svh bottom sheet; feature rows respond to keyboard focus as well as hover.
+
+### C. Lab portal cursor bug (root cause)
+- `.cursor-root` was `z-index: 60`; the About & Labs portal overlay is `z-[65]`, so once the portal opens the custom cursor painted behind the blurred backdrop. Raised the cursor to `z-index: 80` (above portal 65 and preloader 70). Verified: dot lands at the pointer over the open portal (computed z 80, screenshot).
+
+### D. Keyboard accessibility
+- **Skip link** as the first tab stop ("Skip to selected works" -> #work); reveal-on-focus pill in CSS; next Tab lands on the carousel arena.
+- **Labs portal**: `aria-modal`, `inert` while closed, focusable scroll region, initial focus on Close, full Tab/Shift+Tab trap, Escape closes, focus returns to the trigger on close.
+- **Menu**: `inert` while closed, focus moves to the first nav item on open, Escape closes, focus returns to the Menu button.
+- **Featured Work**: arena is now `tabIndex=0` with role=application + aria-keyshortcuts; ArrowLeft/Right tween the ring, Enter/Space opens focus mode; a custom accent reticle + "arrow keys browse - enter to open" hint replaces the giant outline (focus-visible only). Opening focus mode hands focus to the panel Close button; closing returns it to the arena. The hidden idle strip is `inert` in focus mode. Both project tablists support ArrowLeft/Right (guard against double-handling; global focus-mode arrow handler ignores `defaultPrevented` and text fields). Feature buttons fire the model hotspot on focus/blur.
+- Portal/menu focus effects use `preventScroll`; reduced DOM focus churn while switching projects.
+
+### E. QA (headless chromium, SwiftShader)
+- `tsc --noEmit` + `vite build` clean.
+- Desktop 1440x900 + mobile 390x760 (touch) full pass: 0 console/page errors; portal opens by click/tap; contact submit still disabled + hint; audio context running.
+- Keyboard probes: skip link -> #work + next Tab = arena; ArrowRight 0 -> 1, Enter opens focus 1; Tab from arena reaches Close then feature rows; Escape returns focus to arena; portal Close <-> "Back to the work" tab wrap; PageDown scrolls the portal region (274px at 620px viewport); menu focus in/out verified; cursor dot at (717,437) z=80 over the portal.
+- Model screenshots re-checked on desktop and mobile for all three projects (idle, demo actions, focus framing).
+
+### F. Files touched this session
+src/canvas/ProjectModels.tsx, src/sections/FeaturedWork.tsx, src/components/layout/PortalOverlay.tsx, src/components/layout/MenuOverlay.tsx, src/App.tsx, src/styles/index.css, HANDBOOK.md.
+
+### G. Still queued (user-supplied)
+- `public/portrait.jpg` for the About id-card (monogram fallback is live).
+- `CONTACT_EMAIL` in src/data/profile.ts to activate the footer form (submit stays disabled + hint until set).

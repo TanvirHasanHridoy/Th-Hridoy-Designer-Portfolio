@@ -57,7 +57,6 @@ const TXT = '#ECEBFF'
 /* NapTrip night-pod palette */
 const MINT = '#9FF7E4'
 const CREAM = '#F2EEDC'
-const BLANKET = '#1E2A5E'
 const PEACH = '#E9C39B'
 
 /* world-space hit radius of each model root (generous, used for ray + rect) */
@@ -1851,8 +1850,8 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
     /* sleeping passenger — breathing, then a jolt awake */
     if (sleeper.current) {
       sleeper.current.scale.y = 1 + (alarm ? 0 : Math.sin(t.current * 1.7) * 0.02)
-      sleeper.current.rotation.x = damp(sleeper.current.rotation.x, alarm ? -0.34 : 0, 4.5, dt)
-      sleeper.current.position.y = damp(sleeper.current.position.y, alarm ? 0.06 : 0, 4, dt)
+      sleeper.current.rotation.x = damp(sleeper.current.rotation.x, alarm ? -0.16 : 0, 4.5, dt)
+      sleeper.current.position.y = damp(sleeper.current.position.y, alarm ? 0.03 : 0, 4, dt)
     }
 
     /* zzz's drift up; scramble away when the alarm fires */
@@ -1971,7 +1970,7 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
           <meshStandardMaterial color="#0E1530" roughness={0.6} metalness={0.3} envMapIntensity={0.6} />
         </RoundedBox>
         <RoundedBox args={[1.18, 0.2, 0.8]} radius={0.09} smoothness={4} position={[0.08, -0.6, 0.08]}>
-          <meshStandardMaterial color="#1C2B57" roughness={0.78} metalness={0.08} envMapIntensity={0.5} />
+          <meshStandardMaterial color="#243562" roughness={0.78} metalness={0.08} envMapIntensity={0.5} />
         </RoundedBox>
 
         {/* reclined backrest + headrest */}
@@ -1982,7 +1981,7 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
           position={[-0.6, -0.02, 0.08]}
           rotation={[0, 0, 0.1]}
         >
-          <meshStandardMaterial color="#18244A" roughness={0.8} metalness={0.08} envMapIntensity={0.5} />
+          <meshStandardMaterial color="#1A2550" roughness={0.8} metalness={0.08} envMapIntensity={0.5} />
         </RoundedBox>
         <RoundedBox
           args={[0.24, 0.34, 0.5]}
@@ -1991,7 +1990,7 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
           position={[-0.68, 0.5, 0.08]}
           rotation={[0, 0, 0.1]}
         >
-          <meshStandardMaterial color="#22315F" roughness={0.75} metalness={0.06} envMapIntensity={0.45} />
+          <meshStandardMaterial color="#26366A" roughness={0.75} metalness={0.06} envMapIntensity={0.45} />
         </RoundedBox>
 
         {/* armrests */}
@@ -2009,35 +2008,40 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
             args={[0.46, 0.8, 0.36]}
             radius={0.14}
             smoothness={3}
-            position={[-0.36, -0.12, 0.06]}
+            position={[-0.26, -0.12, 0.06]}
             rotation={[0, 0, 0.16]}
           >
-            <meshStandardMaterial color="#2A3150" roughness={0.82} metalness={0.04} envMapIntensity={0.4} />
+            <meshStandardMaterial color="#3A4568" roughness={0.82} metalness={0.04} envMapIntensity={0.4} />
           </RoundedBox>
+          {/* neck pillow */}
+          <mesh position={[-0.34, 0.29, 0.08]} rotation={[1.2, 0, 0.2]}>
+            <torusGeometry args={[0.13, 0.045, 12, 28]} />
+            <meshStandardMaterial color={CREAM} roughness={0.85} metalness={0.02} envMapIntensity={0.35} />
+          </mesh>
           {/* head, hair, closed eyes */}
-          <mesh position={[-0.5, 0.44, 0.06]} rotation={[0, 0, 0.24]}>
-            <sphereGeometry args={[0.155, 28, 20]} />
+          <mesh position={[-0.36, 0.46, 0.05]} rotation={[0, 0, 0.22]}>
+            <sphereGeometry args={[0.16, 28, 20]} />
             <meshStandardMaterial color={PEACH} roughness={0.7} metalness={0.02} envMapIntensity={0.35} />
           </mesh>
-          <mesh position={[-0.53, 0.52, 0.04]} scale={[1, 0.82, 1]}>
-            <sphereGeometry args={[0.16, 24, 16]} />
-            <meshStandardMaterial color="#141830" roughness={0.85} metalness={0.05} envMapIntensity={0.3} />
+          <mesh position={[-0.39, 0.55, 0.03]} scale={[1, 0.8, 1]}>
+            <sphereGeometry args={[0.164, 24, 16]} />
+            <meshStandardMaterial color="#191E38" roughness={0.85} metalness={0.05} envMapIntensity={0.3} />
           </mesh>
-          <mesh position={[-0.56, 0.47, 0.19]} rotation={[0, 0, -0.2]}>
-            <boxGeometry args={[0.055, 0.008, 0.008]} />
+          <mesh position={[-0.42, 0.48, 0.192]} rotation={[0, 0, -0.2]}>
+            <boxGeometry args={[0.055, 0.009, 0.008]} />
             <meshBasicMaterial color="#1A1A24" toneMapped={false} />
           </mesh>
-          <mesh position={[-0.46, 0.46, 0.19]} rotation={[0, 0, -0.2]}>
-            <boxGeometry args={[0.055, 0.008, 0.008]} />
+          <mesh position={[-0.3, 0.47, 0.192]} rotation={[0, 0, -0.2]}>
+            <boxGeometry args={[0.055, 0.009, 0.008]} />
             <meshBasicMaterial color="#1A1A24" toneMapped={false} />
           </mesh>
           {/* arm resting on the near armrest toward the phone */}
-          <mesh position={[0.03, -0.19, 0.32]} rotation={[0, 0, -0.42]}>
-            <boxGeometry args={[0.44, 0.12, 0.13]} />
-            <meshStandardMaterial color="#2A3150" roughness={0.82} metalness={0.04} envMapIntensity={0.4} />
+          <mesh position={[0.1, -0.19, 0.32]} rotation={[0, 0, -0.42]}>
+            <boxGeometry args={[0.46, 0.13, 0.14]} />
+            <meshStandardMaterial color="#3A4568" roughness={0.82} metalness={0.04} envMapIntensity={0.4} />
           </mesh>
-          <mesh position={[0.26, -0.24, 0.44]}>
-            <sphereGeometry args={[0.06, 18, 14]} />
+          <mesh position={[0.3, -0.24, 0.44]}>
+            <sphereGeometry args={[0.062, 18, 14]} />
             <meshStandardMaterial color={PEACH} roughness={0.7} metalness={0.02} envMapIntensity={0.35} />
           </mesh>
           {/* legs + blanket */}
@@ -2047,7 +2051,7 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
             smoothness={3}
             position={[0.34, -0.49, 0.18]}
           >
-            <meshStandardMaterial color="#1A2344" roughness={0.85} metalness={0.03} envMapIntensity={0.3} />
+            <meshStandardMaterial color="#26315A" roughness={0.85} metalness={0.03} envMapIntensity={0.3} />
           </RoundedBox>
           <RoundedBox
             args={[0.62, 0.19, 0.26]}
@@ -2055,7 +2059,7 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
             smoothness={3}
             position={[0.34, -0.49, -0.12]}
           >
-            <meshStandardMaterial color="#1A2344" roughness={0.85} metalness={0.03} envMapIntensity={0.3} />
+            <meshStandardMaterial color="#26315A" roughness={0.85} metalness={0.03} envMapIntensity={0.3} />
           </RoundedBox>
           <RoundedBox
             args={[0.66, 0.13, 0.68]}
@@ -2064,7 +2068,7 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
             position={[0.3, -0.4, 0.03]}
             rotation={[0, 0, -0.03]}
           >
-            <meshStandardMaterial color={BLANKET} roughness={0.9} metalness={0.02} envMapIntensity={0.25} />
+            <meshStandardMaterial color="#2C3D79" roughness={0.9} metalness={0.02} envMapIntensity={0.25} />
           </RoundedBox>
         </group>
 
@@ -2079,9 +2083,9 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
         </group>
 
         {/* the phone — GPS arrow + pulsing geofence rings */}
-        <group ref={phone} position={[0.5, -0.22, 0.52]} rotation={[-0.5, 0.02, -0.04]}>
+        <group ref={phone} position={[0.5, -0.2, 0.52]} rotation={[-0.5, 0.02, -0.04]}>
           <mesh ref={phoneGlow} position={[0, 0, -0.03]}>
-            <planeGeometry args={[0.72, 0.9]} />
+            <planeGeometry args={[0.8, 1.0]} />
             <meshBasicMaterial
               map={phoneHalo}
               transparent
@@ -2091,11 +2095,11 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
               toneMapped={false}
             />
           </mesh>
-          <RoundedBox args={[0.18, 0.36, 0.02]} radius={0.028} smoothness={3}>
+          <RoundedBox args={[0.2, 0.4, 0.02]} radius={0.03} smoothness={3}>
             <meshStandardMaterial color="#0A0E1B" roughness={0.35} metalness={0.6} envMapIntensity={0.9} />
           </RoundedBox>
           <mesh position={[0, 0, 0.012]}>
-            <planeGeometry args={[0.155, 0.32]} />
+            <planeGeometry args={[0.175, 0.36]} />
             <meshBasicMaterial map={phoneScreen} toneMapped={false} />
           </mesh>
           {/* direction arrow — points along the route */}
@@ -2351,9 +2355,9 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
            world-space upper-half target) and drops a touch lower so the
            object clears the section heading. */
         const tx = portrait ? 0 : halfW * 0.36
-        const ty = portrait ? halfH * 0.36 - 1.3 : 0.14
+        const ty = portrait ? halfH * 0.36 - 0.2 : 0.14
         const tz = 2.1
-        const ts = fit * (portrait ? 0.68 : 1.04) * spin.zoom
+        const ts = fit * (portrait ? 0.64 : 1.04) * spin.zoom
         slot.position.set(
           damp(slot.position.x, tx, 3.4, dt),
           damp(slot.position.y, ty, 3.4, dt),
