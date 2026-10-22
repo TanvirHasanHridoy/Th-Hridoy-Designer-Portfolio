@@ -29,6 +29,7 @@ export default function MenuOverlay() {
   const setMenuOpen = useUI((s) => s.setMenuOpen)
   const cardRef = useRef<HTMLDivElement>(null)
   const itemsRef = useRef<HTMLElement[]>([])
+  const previousFocus = useRef<HTMLElement | null>(null)
 
   /* Escape closes */
   useEffect(() => {
@@ -38,6 +39,23 @@ export default function MenuOverlay() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [setMenuOpen])
+
+  /* keyboard focus — move into the card on open, hand back to the trigger on close */
+  useEffect(() => {
+    if (!menuOpen) return
+    previousFocus.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    /* wait out the first tween tick (autoAlpha starts hidden) */
+    const focusTimer = window.setTimeout(() => {
+      cardRef.current
+        ?.querySelector<HTMLElement>('[data-menu-item]')
+        ?.focus({ preventScroll: true })
+    }, 120)
+    return () => {
+      window.clearTimeout(focusTimer)
+      previousFocus.current?.focus({ preventScroll: true })
+    }
+  }, [menuOpen])
 
   /* Entrance / exit tweens (visibility itself stays with React) */
   useEffect(() => {
@@ -88,6 +106,7 @@ export default function MenuOverlay() {
       role="dialog"
       aria-label="Site navigation"
       aria-hidden={!menuOpen}
+      inert={!menuOpen}
       className={cn(
         'fixed right-5 top-[84px] z-50 w-[min(92vw,420px)] overflow-hidden rounded-[28px] border border-line shadow-[0_24px_72px_-24px_rgb(10_10_14/0.3)] md:right-7 md:top-[92px]',
       )}

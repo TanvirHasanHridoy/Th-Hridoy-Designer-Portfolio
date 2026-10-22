@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import gsap from 'gsap'
 import { ArrowUpRight, X } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
@@ -51,7 +51,10 @@ export default function FeaturedWork() {
   const stageRef = useRef<HTMLDivElement>(null)
   const stripRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+  const arenaRef = useRef<HTMLDivElement>(null)
+  const wasFocusOpen = useRef(false)
   const [hasInteracted, setHasInteracted] = useState(false)
+  const [arenaKeyboard, setArenaKeyboard] = useState(false)
 
   const idleProject = PROJECTS[featuredIndex] ?? PROJECTS[0]
   const focusedProject = focusIndex != null ? PROJECTS[focusIndex] ?? PROJECTS[0] : null
@@ -216,6 +219,49 @@ export default function FeaturedWork() {
     }
   }, [focusOpen])
 
+  /* return keyboard focus to the carousel when focus mode closes */
+  useEffect(() => {
+    if (focusOpen) {
+      wasFocusOpen.current = true
+      /* keyboard open: hand focus to the panel once the stamp-in is visible */
+      const focusTimer = window.setTimeout(() => {
+        if (document.activeElement === arenaRef.current) {
+          panelRef.current
+            ?.querySelector<HTMLElement>('button')
+            ?.focus({ preventScroll: true })
+        }
+      }, 220)
+      return () => window.clearTimeout(focusTimer)
+    }
+    if (wasFocusOpen.current) {
+      wasFocusOpen.current = false
+      arenaRef.current?.focus({ preventScroll: true })
+    }
+  }, [focusOpen])
+
+  /* keyboard on the carousel surface: ←/→ browse, Enter/Space expand */
+  const onArenaKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (focusOpen) return
+    const ui = useUI.getState()
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      const step = e.key === 'ArrowRight' ? 1 : -1
+      goTo((ui.featuredIndex + step + PROJECTS.length) % PROJECTS.length)
+    } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault()
+      ui.openFocus(ui.featuredIndex)
+    }
+  }
+
+  /* ←/→ inside either project switcher (both idle and focus panel) */
+  const onTabsKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+    e.preventDefault()
+    const ui = useUI.getState()
+    const cur = ui.workFocusOpen ? ui.workFocusIndex ?? featuredIndex : featuredIndex
+    goTo((cur + (e.key === 'ArrowRight' ? 1 : -1) + PROJECTS.length) % PROJECTS.length)
+  }
+
   /* keyboard: Escape closes · ←/→ swap the expanded project */
   useEffect(() => {
     if (!focusOpen) return
@@ -223,6 +269,14 @@ export default function FeaturedWork() {
       if (!s.carouselActive) useUI.getState().closeFocus()
     })
     const onKey = (e: KeyboardEvent) => {
+      /* tablist / panel handlers run first and preventDefault when they act */
+      if (e.defaultPrevented) return
+      const target = e.target as HTMLElement | null
+      if (
+        target?.isContentEditable ||
+        (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))
+      )
+        return
       const ui = useUI.getState()
       const cur = ui.workFocusIndex ?? ui.featuredIndex
       if (e.key === 'Escape') ui.closeFocus()
@@ -269,7 +323,7 @@ export default function FeaturedWork() {
         className="absolute inset-0 sticky top-0 flex h-[100svh] flex-col px-5 pb-6 pt-[14vh] md:px-10"
       >
         {/* header — compact so the object carousel keeps the stage */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className={`flex flex-wrap items-end justify-between gap-4${focusOpen ? ' max-md:hidden' : ''}`}>
           <div>
             <span className="eyebrow">02 — selected works</span>
             <MaskedLines
@@ -288,11 +342,18 @@ export default function FeaturedWork() {
 
         {/* ARENA — drag surface over the object ring */}
         <div
+          ref={arenaRef}
           data-cursor={modelHover ? (focusOpen ? 'ROTATE' : 'OPEN') : focusOpen ? 'DRAG' : hasInteracted ? '' : 'DRAG'}
           data-cursor-variant={modelHover ? 'view' : 'drag'}
           className="relative flex-1 touch-pan-y select-none"
+          style={{ outline: 'none' }}
           role="application"
-          aria-label="Project object carousel — drag to explore; tap an object to open it"
+          tabIndex={0}
+          aria-keyshortcuts="ArrowLeft ArrowRight Enter"
+          aria-label="Project object carousel — left and right arrow keys browse the projects, Enter opens the featured project, drag to explore"
+          onKeyDown={onArenaKeyDown}
+          onFocus={(e) => setArenaKeyboard(e.currentTarget.matches(':focus-visible'))}
+          onBlur={() => setArenaKeyboard(false)}
         >
           {/* fronted-object reticle hint */}
           <div
@@ -300,27 +361,36 @@ export default function FeaturedWork() {
             style={{
               width: 'min(26vw, 170px)',
               height: 'min(26vw, 170px)',
-              opacity: hasInteracted || focusOpen ? 0 : 0.4,
-              transition: 'opacity .6s var(--e-io)',
-              borderColor: 'color-mix(in srgb, var(--c-fg) 30%, transparent)',
+              opacity:
+                arenaKeyboard && !focusOpen ? 0.9 : hasInteracted || focusOpen ? 0 : 0.4,
+              transition: 'opacity .6s var(--e-io), border-color .3s var(--e-io)',
+              borderColor:
+                arenaKeyboard && !focusOpen
+                  ? 'var(--c-accent)'
+                  : 'color-mix(in srgb, var(--c-fg) 30%, transparent)',
             }}
             aria-hidden
           />
           <div
             className="pointer-events-none absolute bottom-1 left-1/2 flex -translate-x-1/2 items-center gap-2 eyebrow"
             style={{
-              opacity: hasInteracted || focusOpen ? 0 : 1,
+              opacity:
+                arenaKeyboard && !focusOpen ? 1 : hasInteracted || focusOpen ? 0 : 1,
               transition: 'opacity .6s var(--e-io)',
+              color: arenaKeyboard && !focusOpen ? 'var(--c-accent)' : undefined,
             }}
             aria-hidden
           >
-            drag to spin · tap an object
+            {arenaKeyboard && !focusOpen
+              ? '← → browse · enter to open'
+              : 'drag to spin · tap an object'}
           </div>
         </div>
 
         {/* BOTTOM STRIP — idle context card (fades away in focus mode) */}
         <div
           ref={stripRef}
+          inert={focusOpen}
           className="mt-auto rounded-[22px] border border-line px-4 pb-3 pt-4 md:px-7 md:pb-4 md:pt-5"
           style={{
             background: 'color-mix(in srgb, var(--c-bg) 78%, transparent)',
@@ -393,7 +463,12 @@ export default function FeaturedWork() {
           </div>
 
           {/* dot selectors — tween the ring */}
-          <div className="mt-4 flex items-center gap-2" role="tablist" aria-label="Projects">
+          <div
+            className="mt-4 flex items-center gap-2"
+            role="tablist"
+            aria-label="Projects"
+            onKeyDown={onTabsKeyDown}
+          >
             {PROJECTS.map((p, i) => (
               <button
                 key={p.id}
@@ -427,6 +502,9 @@ export default function FeaturedWork() {
             ref={panelRef}
             data-focus-panel
             data-lenis-prevent=""
+            tabIndex={0}
+            role="region"
+            aria-label={`${focusedProject.title} — project details`}
             className="absolute bottom-4 right-4 z-20 max-h-[56svh] overflow-y-auto overscroll-contain rounded-[22px] border border-line px-5 pb-4 pt-5 md:bottom-9 md:right-auto md:top-[27vh] md:max-h-[65svh] md:w-[min(36vw,440px)] md:pb-5"
             style={{
               background: 'color-mix(in srgb, var(--c-bg) 80%, transparent)',
@@ -469,6 +547,16 @@ function FocusPanel({
   onGoTo: (i: number) => void
 }) {
   const close = () => useUI.getState().closeFocus()
+
+  const onTabKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+    e.preventDefault()
+    onGoTo(
+      (featuredIndex + (e.key === 'ArrowRight' ? 1 : -1) + PROJECTS.length) %
+        PROJECTS.length,
+    )
+  }
+
   return (
     <div className="relative">
       <button
@@ -528,7 +616,7 @@ function FocusPanel({
 
         <p className="eyebrow mt-3">key features</p>
         <p className="mt-1 text-[0.72rem] tracking-wide text-muted">
-          hover a feature — it lights up in the object · click to run it
+          hover or focus a feature — it lights up in the object · click to run it
         </p>
         <ul className="mt-1.5 space-y-1">
           {project.features.map((f, i) => (
@@ -542,6 +630,10 @@ function FocusPanel({
                 }}
                 onMouseEnter={() => (scrollStore.hotspot = i)}
                 onMouseLeave={() => {
+                  if (scrollStore.hotspot === i) scrollStore.hotspot = null
+                }}
+                onFocus={() => (scrollStore.hotspot = i)}
+                onBlur={() => {
                   if (scrollStore.hotspot === i) scrollStore.hotspot = null
                 }}
                 data-cursor="RUN"
@@ -601,6 +693,7 @@ function FocusPanel({
         className="mt-4 flex items-center gap-2 pe-10 md:pe-12"
         role="tablist"
         aria-label="Projects"
+        onKeyDown={onTabKey}
       >
         {PROJECTS.map((p, i) => (
           <button

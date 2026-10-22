@@ -252,8 +252,32 @@ button:focus-visible .roll-stack {  transform: translateY(-50%);
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 60;
+  /* above the labs portal (65) and preloader (70) so the pointer never
+     disappears behind a fixed overlay */
+  z-index: 80;
   pointer-events: none;
+}
+
+/* keyboard skip link — first tab stop of the page */
+.skip-link {
+  position: fixed;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 95;
+  transform: translateY(-180%);
+  padding: 0.7rem 1.15rem;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: var(--c-bg);
+  color: var(--c-fg);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: transform 0.24s var(--e-io);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 .cursor-ring {
   display: flex;

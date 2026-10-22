@@ -25,8 +25,10 @@ import Footer from './sections/Footer'
  *   30   film grain
  *   40   floating header
  *   50   menu overlay card
- *   60   custom cursor
+ *   65   about & labs portal
  *   70   preloader
+ *   80   custom cursor
+ *   95   keyboard skip link
  */
 export default function App() {
   const ready = useUI((s) => s.ready)
@@ -40,6 +42,9 @@ export default function App() {
 
   return (
     <>
+      <a className="skip-link" href="#work">
+        Skip to selected works
+      </a>
       <SceneCanvas />
       <Grain />
       <CustomCursor />

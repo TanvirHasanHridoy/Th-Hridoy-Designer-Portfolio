@@ -89,6 +89,50 @@ export default function PortalOverlay() {
     return () => window.removeEventListener('keydown', onKey)
   }, [portalOpen, setPortalOpen])
 
+  /* focus management — initial focus, Tab trap, restore on close */
+  useEffect(() => {
+    if (!portalOpen) return
+    const panel = panelRef.current
+    if (!panel) return
+    const previous =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
+
+    const focusables = () =>
+      Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.getClientRects().length > 0)
+
+    /* one tick so the entrance tween has made the panel visible */
+    const focusTimer = window.setTimeout(() => {
+      focusables()[0]?.focus({ preventScroll: true })
+    }, 80)
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const list = focusables()
+      if (!list.length) return
+      const first = list[0]
+      const last = list[list.length - 1]
+      const active = document.activeElement
+      if (e.shiftKey && (active === first || !panel.contains(active))) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && (active === last || !panel.contains(active))) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    panel.addEventListener('keydown', onKey)
+
+    return () => {
+      window.clearTimeout(focusTimer)
+      panel.removeEventListener('keydown', onKey)
+      previous?.focus({ preventScroll: true })
+    }
+  }, [portalOpen])
+
   const onNavigate = (target: string) => {
     setPortalOpen(false)
     window.setTimeout(() => scrollToSection(target), 80)
@@ -98,8 +142,10 @@ export default function PortalOverlay() {
     <div
       ref={panelRef}
       role="dialog"
+      aria-modal={portalOpen ? true : undefined}
       aria-label="About and Labs portal"
       aria-hidden={!portalOpen}
+      inert={!portalOpen}
       className="fixed inset-0 z-[65] flex items-stretch justify-center p-4 md:p-8"
       style={{
         background: 'color-mix(in srgb, var(--c-bg) 78%, transparent)',
@@ -126,8 +172,13 @@ export default function PortalOverlay() {
           </button>
         </div>
 
-        {/* scrollable body */}
-        <div className="flex flex-1 flex-col gap-10 overflow-y-auto px-6 py-8 md:flex-row md:gap-16 md:px-10">
+        {/* scrollable body — focusable so the keyboard can scroll it */}
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="About and labs details"
+          className="flex flex-1 flex-col gap-10 overflow-y-auto px-6 py-8 md:flex-row md:gap-16 md:px-10"
+        >
           {/* about column */}
           <div className="md:w-[38%]">
             <h3 className="display-lg">S M Tanvir Hasan Hridoy</h3>
