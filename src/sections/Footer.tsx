@@ -90,13 +90,20 @@ export default function Footer() {
 
   /* push-past-bottom detection → portal charge. Mouse: repeated wheel
      spins past the bottom of the document. Touch: repeated up-swipes at
-     the bottom (wheel events don't exist there — mobile bug). Both bleed
-     slowly so the bar stays a deliberate gesture, not an accident. */
+     the bottom (wheel events don't exist there — mobile bug).
+     Mobile browsers often stop a few dozen px short of the computed
+     scroll limit (dynamic URL bar / viewport), so accept a near-bottom
+     band instead of requiring an exact 4px hit. Touch also fills faster
+     and bleeds slower so multiple thumb swipes can accumulate. */
   useEffect(() => {
     if (portalOpen) return
-    const charge = (delta: number) => {
+    const nearBottom = () => {
       const limit = document.documentElement.scrollHeight - window.innerHeight
-      if (limit - window.scrollY >= 4) return
+      const slack = Math.min(120, Math.max(32, window.innerHeight * 0.1))
+      return window.scrollY >= limit - slack
+    }
+    const charge = (delta: number) => {
+      if (!nearBottom()) return
       portalProgress.current = Math.min(portalProgress.current + delta, 1)
       if (portalProgress.current >= 1) {
         portalProgress.current = 0
@@ -104,7 +111,7 @@ export default function Footer() {
       }
     }
     const onWheel = (e: WheelEvent) => {
-      if (e.deltaY > 0) charge(e.deltaY / 3000)
+      if (e.deltaY > 0) charge(e.deltaY / 2000)
     }
     let lastTouchY = 0
     const onTouchStart = (e: TouchEvent) => {
@@ -114,13 +121,13 @@ export default function Footer() {
       const y = e.touches[0]?.clientY ?? lastTouchY
       const dy = lastTouchY - y /* up-swipe → positive */
       lastTouchY = y
-      if (dy > 0) charge(dy / 2600)
+      if (dy > 0) charge(dy / 400)
     }
     /* slow self-bleed so the bar is a deliberate gesture, not an accident */
     const decay = (time: number) => {
       void time
       if (portalProgress.current > 0) {
-        portalProgress.current = Math.max(0, portalProgress.current - 0.0025)
+        portalProgress.current = Math.max(0, portalProgress.current - 0.0011)
       }
       const bar = barFillRef.current
       if (bar) {

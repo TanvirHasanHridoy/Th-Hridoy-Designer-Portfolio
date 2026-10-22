@@ -311,3 +311,29 @@ src/sections/FeaturedWork.tsx, src/canvas/ProjectModels.tsx, src/styles/index.cs
 - 320x568 header nav overflow (Menu pill slightly clipped) is pre-existing and untouched; the work heading/model collision at 320 is fixed.
 - Still waiting on user-supplied `public/portrait.jpg` and `CONTACT_EMAIL`.
 - Committed locally only; not pushed.
+
+## 6. FIX - footer "continue to scroll" portal charge on touch (2026-10-22, session 6)
+
+### A. Problem
+- Phone users could not fill the "continue to scroll" bar by swiping at the bottom, so the About/Labs portal never opened from the gesture.
+- Reproduced with CDP touch swipes at 390x844: the bar only reached ~0.00005 after 8 full up-swipes.
+- Two causes: the bottom gate required an exact 4px hit (`limit - scrollY >= 4`), and the touch charge (`dy / 2600`) was almost completely erased by the 0.0025/frame self-bleed between swipes. A 360px swipe added ~0.07, then ~350ms of bleed removed most of it.
+- Mobile dynamic URL bars can also leave the document a few dozen px short of `scrollHeight - innerHeight`, so the exact 4px gate may never pass on a real phone.
+
+### B. Fix
+- `nearBottom()` now accepts a band: 10% of `innerHeight`, clamped to 32-120px, instead of 4px.
+- Touch charge changed from `dy / 2600` to `dy / 400`; wheel charge from `deltaY / 3000` to `deltaY / 2000`.
+- Self-bleed reduced from 0.0025 to 0.0011 per frame so consecutive thumb swipes accumulate.
+- Tap-to-open remains the zero-gesture fallback.
+
+### C. Verification
+- CDP touch swipes at 390x844, 430x932 and 320x568: one swipe fills 58-86% of the bar; the second swipe opens the portal. Before: 8 swipes did not open.
+- Mid-page swipe does not open the portal. Desktop: 5 wheel ticks at the bottom open it. Tapping the bar still opens instantly and focuses Close.
+- 0 console/page errors; `npm run build` clean.
+- Proof screenshots: `C:\Users\thhri\AppData\Local\Temp\opencode\scroll-fix\` (`phone-after-one-swipe.png`, `phone-portal-open.png`).
+
+### D. Files touched this session
+src/sections/Footer.tsx, HANDBOOK.md.
+
+### E. Notes
+- Committed locally only; not pushed.
