@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowUpRight, MapPin, Sparkles } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, MapPin, Sparkles } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
 import RollLink from '../components/ui/RollLink'
 import { PROFILE, STACK, TIMELINE } from '../data/profile'
@@ -19,6 +19,9 @@ export default function About() {
   /* portrait tile: real photo while it loads fine, monogram fallback if
      `public/portrait.jpg` isn't dropped in (or fails to load) */
   const [imgOk, setImgOk] = useState(true)
+  /* mobile stack carousel — one category per card, swipe or arrows */
+  const stackRef = useRef<HTMLDivElement>(null)
+  const [stackIndex, setStackIndex] = useState(0)
 
   /* soft per-card reveal as blocks enter the viewport */
   useEffect(() => {
@@ -41,6 +44,37 @@ export default function About() {
     }, el)
     return () => ctx.revert()
   }, [])
+
+  /* keep the counter in sync with the nearest snapped card */
+  const onStackScroll = () => {
+    const el = stackRef.current
+    if (!el) return
+    const center = el.getBoundingClientRect().left + el.clientWidth / 2
+    let best = 0
+    let bestDistance = Infinity
+    Array.from(el.children).forEach((child, i) => {
+      const rect = (child as HTMLElement).getBoundingClientRect()
+      const distance = Math.abs(rect.left + rect.width / 2 - center)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = i
+      }
+    })
+    setStackIndex(best)
+  }
+
+  const scrollStackTo = (index: number) => {
+    const el = stackRef.current
+    if (!el) return
+    const card = el.children[index] as HTMLElement | undefined
+    if (!card) return
+    const left =
+      card.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft
+    el.scrollTo({
+      left,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    })
+  }
 
   return (
     <section ref={sectionRef} id="about" className="relative px-5 py-[14vh] md:px-10">
@@ -224,12 +258,20 @@ export default function About() {
             everything here ran in a shipped, public build
           </span>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        <div
+          ref={stackRef}
+          id="stack-carousel"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Tech stack categories"
+          onScroll={onStackScroll}
+          className="stack-carousel relative mt-6 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 sm:grid sm:snap-none sm:grid-cols-2 sm:overflow-visible sm:pb-0 md:grid-cols-3 xl:grid-cols-4"
+        >
           {STACK.map((cat) => (
             <div
               key={cat.title}
               data-about-card
-              className="rounded-[20px] border border-line p-5"
+              className="w-[min(78vw,320px)] shrink-0 snap-start rounded-[20px] border border-line p-4 sm:w-auto sm:shrink sm:p-5"
               style={{
                 background: 'color-mix(in srgb, var(--c-bg) 74%, transparent)',
                 backdropFilter: 'blur(12px)',
@@ -240,11 +282,11 @@ export default function About() {
                 <h3 className="text-[1rem] font-bold tracking-tight">{cat.title}</h3>
                 <span className="eyebrow">{cat.note}</span>
               </div>
-              <ul className="mt-4 flex flex-wrap gap-2">
+              <ul className="mt-3 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
                 {cat.items.map((it) => (
                   <li
                     key={it}
-                    className="rounded-full border border-line px-3 py-1.5"
+                    className="rounded-full border border-line px-2.5 py-1 leading-none sm:px-3 sm:py-1.5 sm:leading-normal"
                     style={{ color: 'var(--c-fg)' }}
                   >
                     <span
@@ -258,6 +300,34 @@ export default function About() {
               </ul>
             </div>
           ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between sm:hidden">
+          <span className="eyebrow" aria-live="polite">
+            {String(stackIndex + 1).padStart(2, '0')} /{' '}
+            {String(STACK.length).padStart(2, '0')}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Previous tech category"
+              aria-controls="stack-carousel"
+              disabled={stackIndex === 0}
+              onClick={() => scrollStackTo(stackIndex - 1)}
+              className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 enabled:hover:border-accent enabled:hover:text-accent-ink disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              aria-label="Next tech category"
+              aria-controls="stack-carousel"
+              disabled={stackIndex === STACK.length - 1}
+              onClick={() => scrollStackTo(stackIndex + 1)}
+              className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 enabled:hover:border-accent enabled:hover:text-accent-ink disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

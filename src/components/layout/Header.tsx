@@ -112,6 +112,21 @@ function MenuButton() {
 export default function Header() {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between p-4 sm:p-5 md:p-7">
+      {/* Glass strip: keeps the nav legible while copy/objects pass underneath.
+          The mask fades the glass into the page instead of ending on a bar. */}
+      <div
+        aria-hidden
+        data-header-glass
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[calc(100%+1rem)]"
+        style={{
+          background:
+            'linear-gradient(to bottom, color-mix(in srgb, var(--c-bg) 94%, transparent) 0%, color-mix(in srgb, var(--c-bg) 78%, transparent) 78%, transparent 100%)',
+          backdropFilter: 'blur(20px) saturate(1.35)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.35)',
+          maskImage: 'linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%)',
+        }}
+      />
       <Monogram />
       <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5">
         <SoundToggle />

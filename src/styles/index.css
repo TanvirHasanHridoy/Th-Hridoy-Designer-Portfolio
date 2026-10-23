@@ -354,6 +354,15 @@ button:focus-visible .roll-stack {  transform: translateY(-50%);
   .locator-cue-icon { animation: none; opacity: 1; }
 }
 
+/* mobile tech-stack carousel — snap the cards, hide the native bar */
+.stack-carousel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.stack-carousel::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── Misc ──────────────────────────────────────────────────── */
 .no-select {
   user-select: none;

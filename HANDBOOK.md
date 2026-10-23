@@ -477,3 +477,38 @@ src/sections/Footer.tsx, HANDBOOK.md.
 - `public/portrait.jpg` remains user-supplied; the monogram fallback is live.
 - Project archive / engineering-notes page (point 5) remains deferred; the case-study page is still concept-only.
 - Committed locally only; not pushed.
+
+## 10. POLISH - mobile stack carousel, glass navigation, focus alignment (2026-10-23, session 10)
+
+### A. Mobile tech-stack carousel
+- Below `sm`, the About stack is now a horizontal snap carousel instead of eight stacked cards. Cards are `min(78vw, 320px)` wide, one per view with a next-card peek; swipe and the arrow buttons both drive it. The desktop 2/3/4-column grid is unchanged.
+- Added a live `01 / 08` counter, 40px previous/next buttons with disabled end states, `aria-controls`, a carousel region label, and a reduced-motion-aware scroll behavior. The native scrollbar is hidden by `.stack-carousel`.
+- Mobile cards are compacted with `p-4`, tighter chip gaps, and single-line chips; desktop keeps `p-5` and the existing chip spacing. Measured card heights dropped from `258 -> 192px` at 390 and `282 -> 216px` at 320. One carousel row replaces the previous eight-card column, so the following timeline is reachable in one card height plus controls.
+- QA: at 390 the eight cards are all 192px, swiping through to `08 / 08` disables Next, and the document has `scrollWidth - innerWidth = 0`; at 320 the card is 249.6px inside a 280px scroller and still has zero page overflow.
+
+### B. Glass navigation (and existing text surfaces)
+- The fixed header now owns a glass strip behind the monogram and actions: `color-mix` background from 94% to 78% opacity, `blur(20px) saturate(1.35)`, and a mask fade. It extends `1rem` below the 72px header so the fade lands under the nav rather than through the labels.
+- Bitmap proof at 390: glass height 88px, header 72px; the About heading passing underneath is visibly softened instead of colliding with the monogram/buttons.
+- The About cards (74% bg + blur 12), menu, focus panel (80% bg + blur 16), and Featured Work bottom strip already used translucent glass surfaces; this pass keeps those treatments and adds the missing fixed navigation layer. No new opaque blocks were introduced.
+
+### C. Focus model / info-card alignment
+- Desktop and landscape focus: moved the lifted model down from `ty = 0.14` to `ty = -0.25`, matching the side panel's vertical center. Measured panel/model center deltas: `0.4px` at 1440x900, `0.3px` at 1280x800, `0.2px` at 1024x768.
+- `SHEET_LAYOUT_QUERY` is now `(max-aspect-ratio: 85/100), (max-width: 767.98px) and (orientation: portrait)`. Landscape phones no longer get the bottom sheet laid over the model.
+- A short-stage branch (`max-height: 520px`, side-panel layouts only) hides the section heading and uses a compact panel at `top: calc(19svh + 1rem)`, `bottom: 1rem`, `width: min(46vw, 440px)`. This keeps the 3D model clear and centers the panel against it at 844x390 (`0.1px`), 667x375 (`0.2px`), and 568x320 (`0.1px`).
+- Portrait sheet layouts remain at 700x800, 768x1024, and 390x844; the model stays above the sheet with no rectangle overlap. `ProjectModels` now mirrors the sheet rule with `aspect < 0.85 || (width < 768 && height > width)`, so narrow upright devices use the upper-band pose.
+
+### D. QA
+- `npm run build` clean (`tsc --noEmit` + Vite production build, 2555 modules).
+- Focus sweep at 1440x900, 1280x800, 1024x768, 844x390, 700x800, 768x1024, 390x844, 667x375, 568x320: no panel/model overlap; header hidden in focus on sheet and short-stage layouts; 0 console/page errors.
+- Carousel at 390 and 320: no horizontal page overflow; `08 / 08` reached; next disabled; arrows and counter track the nearest card.
+- Header glass verified at 390 over the About heading; computed `backdrop-filter: blur(20px) saturate(1.35)`.
+- Proof screenshots: `qa-shots/round10/` (`390-stack-last.png`, `320-stack-compact.png`, `390-header-glass-b.png`, `1440-focus-b.png`, `844l-focus-b.png`, `667l-focus-b.png`, `568l-focus-b.png`, and portrait sheet shots). QA scripts were temporary and removed before commit.
+
+### E. Files touched this session
+`src/sections/About.tsx`, `src/sections/FeaturedWork.tsx`, `src/canvas/ProjectModels.tsx`, `src/components/layout/Header.tsx`, `src/styles/index.css`, `HANDBOOK.md`.
+
+### F. Still blocked / deferred
+- Configure `VITE_CONTACT_ENDPOINT` before launch; LinkedIn remains the live conversion path.
+- `public/portrait.jpg` remains user-supplied; the monogram fallback is live.
+- Project archive / engineering-notes page remains deferred; no route or nav entry was added.
+- Committed locally only; not pushed.

@@ -2468,7 +2468,11 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
        context card never covers the objects (mobile bug) */
     const vwPortrait = scrollStore.viewport.width || window.innerWidth
     const vhPortrait = scrollStore.viewport.height || window.innerHeight
-    const portrait = vwPortrait / vhPortrait < 0.85
+    /* Mirrors the focus layout switch in FeaturedWork: portrait-shaped
+       viewports, plus narrow devices held upright, use the upper-band focus
+       pose. Landscape phones keep the side-panel pose. */
+    const portrait =
+      vwPortrait / vhPortrait < 0.85 || (vwPortrait < 768 && vhPortrait > vwPortrait)
     const reduce = reduced()
     bob.current += dt * 0.6
     const p = scrollStore.pointerLerped
@@ -2541,7 +2545,7 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
            world-space upper-half target) and drops a touch lower so the
            object clears the section heading. */
         const tx = portrait ? 0 : halfW * 0.36
-        const ty = portrait ? halfH * 0.36 - 0.2 : 0.14
+        const ty = portrait ? halfH * 0.36 - 0.2 : -0.25
         const tz = 2.1
         /* portrait tablets have more band above the bottom sheet than phones,
            so let the focused object fill it without clipping the panel */

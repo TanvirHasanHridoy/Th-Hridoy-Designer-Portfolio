@@ -23,24 +23,27 @@ const FEATURE_ACTIONS: Record<ProjectId, string[]> = {
 /**
  * Focus layout switch. Phones and portrait tablets use the bottom-sheet
  * composition (model in the upper band, panel from the bottom); landscape
- * tablets and desktops keep the side panel. The portrait arm mirrors the
- * aspect test in `ProjectModels` (aspect < 0.85) that drives model framing;
- * the width arm covers the phone layouts.
+ * tablets, short landscape phones and desktops keep the side panel. The
+ * width+portrait arm keeps narrow portrait devices on the sheet even when
+ * their aspect is just above 0.85.
  */
-const SHEET_LAYOUT_QUERY = '(max-width: 767.98px), (max-aspect-ratio: 85/100)'
+const SHEET_LAYOUT_QUERY =
+  '(max-aspect-ratio: 85/100), (max-width: 767.98px) and (orientation: portrait)'
+/** short viewports use a compact side panel with the heading out of the way */
+const SHORT_STAGE_QUERY = '(max-height: 520px)'
 
-function useSheetLayout() {
-  const [sheet, setSheet] = useState(() =>
-    typeof window === 'undefined' ? false : window.matchMedia(SHEET_LAYOUT_QUERY).matches,
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia(query).matches,
   )
   useEffect(() => {
-    const mq = window.matchMedia(SHEET_LAYOUT_QUERY)
-    const sync = () => setSheet(mq.matches)
+    const mq = window.matchMedia(query)
+    const sync = () => setMatches(mq.matches)
     sync()
     mq.addEventListener('change', sync)
     return () => mq.removeEventListener('change', sync)
-  }, [])
-  return sheet
+  }, [query])
+  return matches
 }
 
 /** tween the turntable to bring project i to the front (shortest wrap-around) */
@@ -79,7 +82,8 @@ export default function FeaturedWork() {
   const wasFocusOpen = useRef(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [arenaKeyboard, setArenaKeyboard] = useState(false)
-  const sheetLayout = useSheetLayout()
+  const sheetLayout = useMediaQuery(SHEET_LAYOUT_QUERY)
+  const shortStage = useMediaQuery(SHORT_STAGE_QUERY) && !sheetLayout
 
   const idleProject = PROJECTS[featuredIndex] ?? PROJECTS[0]
   const focusedProject = focusIndex != null ? PROJECTS[focusIndex] ?? PROJECTS[0] : null
@@ -355,7 +359,7 @@ export default function FeaturedWork() {
         className="absolute inset-0 sticky top-0 flex h-[100svh] flex-col px-5 pb-6 pt-[14vh] md:px-10"
       >
         {/* header — compact so the object carousel keeps the stage */}
-        <div className={`flex flex-wrap items-end justify-between gap-4${focusOpen ? (sheetLayout ? ' hidden' : ' max-md:hidden') : ''}`}>
+        <div className={`flex flex-wrap items-end justify-between gap-4${focusOpen ? (sheetLayout || shortStage ? ' hidden' : ' max-md:hidden') : ''}`}>
           <div>
             <span className="eyebrow">02 — selected works</span>
             <MaskedLines
@@ -534,7 +538,9 @@ export default function FeaturedWork() {
             className={`absolute z-20 overflow-y-auto overscroll-contain rounded-[22px] border border-line px-5 pb-4 pt-5 ${
               sheetLayout
                 ? 'bottom-4 left-4 right-4 mx-auto max-h-[56svh] max-w-[640px] md:max-h-[52svh] md:pb-5'
-                : 'bottom-9 right-auto top-[27vh] max-h-[65svh] w-[min(36vw,440px)] md:pb-5'
+                : shortStage
+                  ? 'bottom-4 left-5 right-auto top-[calc(19svh+1rem)] max-h-[calc(81svh-2rem)] w-[min(46vw,440px)] md:left-10 md:pb-5'
+                  : 'bottom-9 right-auto top-[27vh] max-h-[65svh] w-[min(36vw,440px)] md:pb-5'
             }`}
             style={{
               background: 'color-mix(in srgb, var(--c-bg) 80%, transparent)',
