@@ -164,15 +164,39 @@ export function HeroArtifact() {
       return
     }
 
-    /* choreographed drift per section */
-    const driftX = activeSection === 1 ? -2.4 : 0
-    const driftY = activeSection === 1 ? 0.35 : Math.sin(t * 0.55) * 0.12
+    /* choreographed drift per section. About parks the sculpture behind the
+       ID card on the right so it never sits under the heading or bio; the
+       hero lifts it into the upper-right, leaving the statement on a clean
+       field of page background. */
+    const inAbout = activeSection === 1
+    /* narrow phones: lift and shrink the hero orb so the top labels and the
+       statement both keep clear ground */
+    const phone = state.size.width < 480
+    const driftX = inAbout ? (compact ? 0 : 2.5) : compact ? (phone ? -0.35 : 0) : 2.0
+    const driftY = inAbout
+      ? compact
+        ? 0.35
+        : -0.55
+      : phone
+        ? 1.9
+        : compact
+          ? 1.65
+          : 1.0
 
     /* tilt toward pointer + slow autonomous spin */
     s.tiltX = damp(s.tiltX, pointerLerped.y * -0.42, 3, dt)
     s.tiltY = damp(s.tiltY, pointerLerped.x * 0.52, 3, dt)
 
-    s.scale = damp(s.scale, (activeSection === 1 ? 0.78 : 1.08) * (0.6 + 0.4 * ease), 2.4, dt)
+    const targetScale = inAbout
+      ? compact
+        ? 0.78
+        : 0.62
+      : phone
+        ? 0.8
+        : compact
+          ? 0.88
+          : 0.9
+    s.scale = damp(s.scale, targetScale * (0.6 + 0.4 * ease), 2.4, dt)
 
     const group = groupRef.current
     if (group) {

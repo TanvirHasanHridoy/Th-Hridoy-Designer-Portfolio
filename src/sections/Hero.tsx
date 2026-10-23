@@ -13,7 +13,7 @@ export default function Hero() {
         <span className="eyebrow opacity-0 md:opacity-100">
           thridoy° — full-stack engineering
         </span>
-        <span className="eyebrow text-right">
+        <span className="eyebrow version-chip text-right">
           portfolio — 2026
         </span>
       </div>
@@ -22,14 +22,7 @@ export default function Hero() {
       <div className="max-w-full md:mt-[26vh]">
         <div className="mb-6 flex items-center gap-3">
           <span className="inline-block size-2 rounded-full bg-accent" />
-          <span
-            className="eyebrow rounded-md px-1.5 py-0.5"
-            style={{
-              background: 'color-mix(in srgb, var(--c-bg) 84%, transparent)',
-              backdropFilter: 'blur(7px)',
-              WebkitBackdropFilter: 'blur(7px)',
-            }}
-          >
+          <span className="eyebrow">
             S M Tanvir Hasan Hridoy — Chemnitz, Germany
           </span>
         </div>
