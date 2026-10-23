@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import { PROJECTS } from '../data/projects'
+import { playCue } from '../audio/engine'
 import { scrollStore, damp } from '../store/scrollStore'
 import { useUI } from '../store/store'
 
@@ -70,7 +71,7 @@ function makeTex(w: number, h: number, paint: (g: CanvasRenderingContext2D) => v
   paint(c.getContext('2d')!)
   const t = new THREE.CanvasTexture(c)
   t.colorSpace = THREE.SRGBColorSpace
-  t.anisotropy = 4
+  t.anisotropy = 8
   return t
 }
 
@@ -116,7 +117,7 @@ const AFDUR: Record<string, number> = {
   favourites: 1.9,
 }
 
-/** pulsing AR-locator ring that swims between the hovered feature's anchor */
+/** camera-facing AR locator ring that swims between hovered feature anchors */
 function HotspotRing({
   anchors,
   feature,
@@ -126,45 +127,76 @@ function HotspotRing({
   feature: () => number
   color?: string
 }) {
-  const ref = useRef<THREE.Mesh>(null)
+  const ref = useRef<THREE.Group>(null)
+  const ringMat = useRef<THREE.MeshBasicMaterial>(null)
+  const dotMat = useRef<THREE.MeshBasicMaterial>(null)
   const t = useRef(0)
-  const cur = useRef({ x: 0, y: 0, z: 0, r: anchors[0]?.[3] ?? 0.6 })
+  const cur = useRef({ x: 0, y: 0, z: 0, r: Math.max(anchors[0]?.[3] ?? 0.6, 0.4) })
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05)
     t.current += dt
     const g = ref.current
-    if (!g) return
-    const m = g.material as THREE.MeshBasicMaterial
+    const ring = ringMat.current
+    const dot = dotMat.current
+    if (!g || !ring || !dot) return
     const h = feature()
     if (h < 0 || h >= anchors.length) {
-      m.opacity = damp(m.opacity, 0, 6, dt)
-      g.visible = m.opacity > 0.012
+      ring.opacity = damp(ring.opacity, 0, 6, dt)
+      dot.opacity = damp(dot.opacity, 0, 6, dt)
+      g.visible = ring.opacity > 0.012
       return
     }
     const a = anchors[Math.round(h)]
+    const targetR = Math.max(a[3], 0.4)
     cur.current.x = damp(cur.current.x, a[0], 9, dt)
     cur.current.y = damp(cur.current.y, a[1], 9, dt)
     cur.current.z = damp(cur.current.z, a[2], 9, dt)
-    cur.current.r = damp(cur.current.r, a[3], 9, dt)
+    cur.current.r = damp(cur.current.r, targetR, 9, dt)
+
     g.visible = true
     g.position.set(cur.current.x, cur.current.y, cur.current.z)
-    g.scale.setScalar(cur.current.r * (1 + Math.sin(t.current * 3.4) * 0.045))
-    m.opacity = damp(m.opacity, 0.7 + Math.sin(t.current * 2.2) * 0.14, 7, dt)
+    const pulse = cur.current.r * (1 + Math.sin(t.current * 3.4) * 0.045)
+    g.scale.setScalar(pulse)
+    /* billboard: the locator stays readable while the object is rotated */
+    g.lookAt(state.camera.position)
+
+    /* depthTest is off on both materials, so the locator reads as an
+       overlay even when the anchor sits behind the model's front face. */
+    ring.opacity = damp(ring.opacity, 0.88 + Math.sin(t.current * 2.2) * 0.08, 7, dt)
+    dot.opacity = damp(dot.opacity, 0.95, 8, dt)
   })
 
   return (
-    <mesh ref={ref} scale={0.001} visible={false}>
-      <ringGeometry args={[0.92, 1, 48]} />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={0}
-        side={THREE.DoubleSide}
-        toneMapped={false}
-        depthWrite={false}
-      />
-    </mesh>
+    <group ref={ref} scale={0.001} visible={false}>
+      <mesh renderOrder={30} frustumCulled={false}>
+        <ringGeometry args={[0.9, 1, 64]} />
+        <meshBasicMaterial
+          ref={ringMat}
+          color={color}
+          transparent
+          opacity={0}
+          side={THREE.DoubleSide}
+          toneMapped={false}
+          depthWrite={false}
+          depthTest={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      {/* bright core makes the exact target point unambiguous */}
+      <mesh renderOrder={31} frustumCulled={false}>
+        <circleGeometry args={[0.085, 24]} />
+        <meshBasicMaterial
+          ref={dotMat}
+          color="#FFFFFF"
+          transparent
+          opacity={0}
+          toneMapped={false}
+          depthWrite={false}
+          depthTest={false}
+        />
+      </mesh>
+    </group>
   )
 }
 
@@ -1115,7 +1147,7 @@ function SudokuModel({ hovering, pulse, feature }: ModelProps) {
     const g = c.getContext('2d')
     const tex = new THREE.CanvasTexture(c)
     tex.colorSpace = THREE.SRGBColorSpace
-    tex.anisotropy = 4
+    tex.anisotropy = 8
     if (g) paintSudoku(g, SUDOKU_PLAYER_INIT)
     return { c, g, tex }
   }, [])
@@ -1126,7 +1158,7 @@ function SudokuModel({ hovering, pulse, feature }: ModelProps) {
     const g = c.getContext('2d')
     const tex = new THREE.CanvasTexture(c)
     tex.colorSpace = THREE.SRGBColorSpace
-    tex.anisotropy = 4
+    tex.anisotropy = 8
     if (g) paintSudoku(g, rivalDigits(5), { rival: true, selected: [2, 6] })
     return { c, g, tex }
   }, [])
@@ -2441,6 +2473,7 @@ export function ProjectModels({ appear }: { appear: MutableRefObject<number> }) 
 
     if (over !== hover.current) {
       hover.current = over
+      if (over) playCue('model')
       useUI.getState().setModelHover(over)
     }
   })

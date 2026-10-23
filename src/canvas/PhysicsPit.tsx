@@ -4,6 +4,7 @@ import type { PerspectiveCamera } from 'three'
 import { Physics, RigidBody, BallCollider, type RapierRigidBody } from '@react-three/rapier'
 import { RoundedBox } from '@react-three/drei'
 import { useUI } from '../store/store'
+import { playCue } from '../audio/engine'
 import { scrollStore } from '../store/scrollStore'
 
 /**
@@ -74,6 +75,18 @@ function buildRoster(count: number): BodySpec[] {
 }
 
 const clampAbs = (v: number, m: number) => Math.max(-m, Math.min(m, v))
+
+/* collisions are frequent in the pit — one soft impact texture per window */
+let lastImpactCue = 0
+function impactCue(speed: number) {
+  const now = performance.now()
+  if (now - lastImpactCue < 180) return
+  lastImpactCue = now
+  playCue('impact', {
+    intensity: Math.min(1, speed / 5),
+    pan: Math.random() * 0.7 - 0.35,
+  })
+}
 
 /**
  * The world. Bodies register themselves into a shared ref list so the
@@ -152,6 +165,11 @@ function PitWorld() {
           friction={0.2}
           linearDamping={0.25}
           angularDamping={0.2}
+          onCollisionEnter={() => {
+            const lv = bodyRefs.current[i]?.linvel()
+            const speed = lv ? Math.hypot(lv.x, lv.y, lv.z) : 0
+            if (speed > 1.3) impactCue(speed)
+          }}
         >
           {spec.kind === 'sphere' && (
             <mesh>

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import gsap from 'gsap'
-import { ArrowUpRight, X } from 'lucide-react'
+import { ArrowUpRight, Crosshair, X } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
 import Magnetic from '../components/ui/Magnetic'
 import { GithubMark } from '../components/ui/BrandIcons'
 import { PROJECTS, type Project, type ProjectId } from '../data/projects'
+import { playCue } from '../audio/engine'
 import { useUI } from '../store/store'
 import { scrollStore } from '../store/scrollStore'
 import { lenisRef } from '../hooks/useSmoothScroll'
@@ -85,6 +86,7 @@ export default function FeaturedWork() {
 
   /** ring tween to project `i`; while focused it also expands that object */
   const goTo = (i: number) => {
+    if (i !== featuredIndex) playCue('switch')
     tweenAngleTo(i)
     if (useUI.getState().workFocusOpen) useUI.getState().openFocus(i)
     scrollStore.hotspot = null
@@ -175,9 +177,11 @@ export default function FeaturedWork() {
         /* expanded: tap the object to replay its demo, tap the void to close */
         if (t?.closest?.('[data-focus-panel]')) return
         if (hitSlot(ui.workFocusIndex ?? ui.featuredIndex)) {
+          playCue('run')
           scrollStore.modelPulse += 1
           return
         }
+        playCue('close')
         ui.closeFocus()
         return
       }
@@ -186,6 +190,7 @@ export default function FeaturedWork() {
       for (let i = 0; i < PROJECTS.length; i += 1) {
         if (!hitSlot(i)) continue
         setHasInteracted(true)
+        playCue('open')
         if (i !== ui.featuredIndex) tweenAngleTo(i)
         ui.openFocus(i)
         return
@@ -273,6 +278,7 @@ export default function FeaturedWork() {
       goTo((ui.featuredIndex + step + PROJECTS.length) % PROJECTS.length)
     } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
       e.preventDefault()
+      playCue('open')
       ui.openFocus(ui.featuredIndex)
     }
   }
@@ -303,8 +309,10 @@ export default function FeaturedWork() {
         return
       const ui = useUI.getState()
       const cur = ui.workFocusIndex ?? ui.featuredIndex
-      if (e.key === 'Escape') ui.closeFocus()
-      else if (e.key === 'ArrowRight') goTo((cur + 1) % PROJECTS.length)
+      if (e.key === 'Escape') {
+        playCue('close')
+        ui.closeFocus()
+      } else if (e.key === 'ArrowRight') goTo((cur + 1) % PROJECTS.length)
       else if (e.key === 'ArrowLeft')
         goTo((cur + PROJECTS.length - 1) % PROJECTS.length)
     }
@@ -367,8 +375,9 @@ export default function FeaturedWork() {
         {/* ARENA — drag surface over the object ring */}
         <div
           ref={arenaRef}
-          data-cursor={modelHover ? (focusOpen ? 'ROTATE' : 'OPEN') : focusOpen ? 'DRAG' : hasInteracted ? '' : 'DRAG'}
-          data-cursor-variant={modelHover ? 'view' : 'drag'}
+          data-cursor={modelHover || focusOpen || !hasInteracted ? 'DRAG' : ''}
+          data-cursor-variant="drag"
+          data-sfx="none"
           className="relative flex-1 touch-pan-y select-none"
           style={{ outline: 'none' }}
           role="application"
@@ -602,7 +611,10 @@ function FocusPanel({
   featuredIndex: number
   onGoTo: (i: number) => void
 }) {
-  const close = () => useUI.getState().closeFocus()
+  const close = () => {
+    playCue('close')
+    useUI.getState().closeFocus()
+  }
 
   const onTabKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
@@ -670,9 +682,23 @@ function FocusPanel({
           ))}
         </div>
 
-        <p className="eyebrow mt-3">key features</p>
-        <p className="mt-1 text-[0.72rem] tracking-wide text-muted">
-          hover or focus a feature — it lights up in the object · click to run it
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="eyebrow">key features</p>
+          <span
+            id="feature-locator-hint"
+            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.62rem] font-medium uppercase tracking-[0.14em]"
+            style={{
+              color: 'var(--c-accent)',
+              borderColor: 'color-mix(in srgb, var(--c-accent) 32%, transparent)',
+            }}
+          >
+            <Crosshair size={11} strokeWidth={2.2} className="locator-cue-icon" aria-hidden />
+            <span className="sm:hidden">tap to locate</span>
+            <span className="hidden sm:inline">hover to locate</span>
+          </span>
+        </div>
+        <p className="mt-2 text-[0.72rem] leading-relaxed tracking-wide text-muted">
+          Hover or focus a feature to point it out on the object. Click to run it.
         </p>
         <ul className="mt-1.5 space-y-1">
           {project.features.map((f, i) => (
@@ -680,6 +706,7 @@ function FocusPanel({
               <button
                 type="button"
                 onClick={() => {
+                  playCue('run')
                   scrollStore.modelAction.n += 1
                   scrollStore.modelAction.name = FEATURE_ACTIONS[project.id]?.[i] ?? null
                   scrollStore.hotspot = i
@@ -688,22 +715,33 @@ function FocusPanel({
                 onMouseLeave={() => {
                   if (scrollStore.hotspot === i) scrollStore.hotspot = null
                 }}
-                onFocus={() => (scrollStore.hotspot = i)}
+                onFocus={(e) => {
+                  scrollStore.hotspot = i
+                  if (e.currentTarget.matches(':focus-visible')) playCue('locate')
+                }}
                 onBlur={() => {
                   if (scrollStore.hotspot === i) scrollStore.hotspot = null
                 }}
-                data-cursor="RUN"
+                data-cursor="LOCATE"
                 data-cursor-variant="view"
-                title="Run this inside the object"
-                className="group flex w-full items-start gap-2.5 rounded-md px-2 py-1 -mx-2 text-left transition-colors duration-300 hover:bg-[color-mix(in_srgb,var(--c-accent)_9%,transparent)]"
+                data-sfx="locate"
+                title="Hover to locate on the object · click to run"
+                aria-describedby="feature-locator-hint"
+                className="group -mx-2 flex w-full items-start gap-2.5 rounded-md px-2 py-1 text-left transition-colors duration-300 hover:bg-[color-mix(in_srgb,var(--c-accent)_9%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--c-accent)_9%,transparent)]"
               >
                 <span
-                  className="mt-[6px] inline-block size-2 shrink-0 rounded-[3px] transition-transform duration-300 group-hover:scale-125"
+                  className="mt-[6px] inline-block size-2 shrink-0 rounded-[3px] transition-transform duration-300 group-hover:scale-125 group-focus-visible:scale-125"
                   style={{ background: 'var(--c-accent)' }}
                   aria-hidden
                 />
                 <span className="text-[0.9rem] leading-snug" style={{ color: 'var(--c-fg)' }}>
                   {f}
+                </span>
+                <span
+                  className="ml-auto mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border border-line text-muted opacity-35 transition-all duration-300 group-hover:border-accent group-hover:text-accent group-hover:opacity-100 group-focus-visible:border-accent group-focus-visible:text-accent group-focus-visible:opacity-100"
+                  aria-hidden
+                >
+                  <Crosshair size={12} strokeWidth={2} />
                 </span>
               </button>
             </li>

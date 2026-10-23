@@ -13,6 +13,11 @@ const PhysicsPit = lazy(() =>
   import('./PhysicsPit').then((m) => ({ default: m.PhysicsPit })),
 )
 
+/* phones / low-core machines keep true MSAA, just at a lighter sample count */
+const compactDevice =
+  typeof window !== 'undefined' &&
+  (window.innerWidth < 768 || (navigator.hardwareConcurrency ?? 8) <= 4)
+
 /**
  * THE persistent WebGL canvas.
  *
@@ -25,9 +30,14 @@ export function SceneCanvas() {
   return (
     <div aria-hidden className="fixed inset-0 z-0" style={{ pointerEvents: 'none' }}>
       <Canvas
-        dpr={[1, window.innerWidth < 768 ? 1.5 : 1.75]}
+        dpr={[1, 2]}
         camera={{ position: [0, 0.1, 16], fov: 50, near: 0.1, far: 80 }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+          stencil: false,
+        }}
         style={{ position: 'fixed', inset: 0 }}
       >
         <Suspense fallback={null}>
@@ -40,7 +50,7 @@ export function SceneCanvas() {
           <pointLight position={[0, -3, -5]} intensity={2.2} color="#1A2FFB" distance={18} />
 
           {/* offline procedural environment (no HDR download) */}
-          <Environment resolution={256} frames={1}>
+          <Environment resolution={512} frames={1}>
             <Lightformer form="rect" intensity={2.4} color="#F0F1FA" position={[0, 6, -6]} scale={[10, 6, 1]} />
             <Lightformer form="rect" intensity={3.2} color="#1A2FFB" position={[-8, 1, 2]} scale={[6, 10, 1]} />
             <Lightformer form="rect" intensity={1.1} color="#101024" position={[8, -2, 4]} scale={[6, 10, 1]} />
@@ -51,8 +61,9 @@ export function SceneCanvas() {
           <WorkCarousel />
           <PhysicsPit />
 
-          {/* subtle grade */}
-          <EffectComposer multisampling={0}>
+          {/* postprocessing MSAA is what actually anti-aliases the composer
+              render target; the renderer's antialias flag alone was unused. */}
+          <EffectComposer multisampling={compactDevice ? 2 : 4}>
             <Bloom intensity={0.55} luminanceThreshold={0.72} luminanceSmoothing={0.28} mipmapBlur />
             <Noise opacity={0.05} blendFunction={BlendFunction.OVERLAY} />
             <Vignette offset={0.28} darkness={0.55} eskil={false} />

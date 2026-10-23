@@ -2,6 +2,7 @@
 import { useFrame } from '@react-three/fiber'
 import { Group, IcosahedronGeometry, Mesh, PointLight, ShaderMaterial, Vector3, Color } from 'three'
 import { useUI } from '../store/store'
+import { playCue } from '../audio/engine'
 import { scrollStore, damp } from '../store/scrollStore'
 import { SIMPLEX_3D_GLSL } from './glsl/noise'
 
@@ -106,6 +107,7 @@ export function HeroArtifact() {
   const geometry = useMemo(() => new IcosahedronGeometry(1.5, 40), [])
 
   const smooth = useRef({ amp: 0, fade: 0, tiltX: 0, tiltY: 0, scale: 0.001 })
+  const lastBlobCue = useRef(0)
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05)
@@ -125,6 +127,19 @@ export function HeroArtifact() {
       2.6,
       dt,
     )
+
+    /* the shader blob gets visibly agitated by pointer speed; give that
+       excitement a soft, heavily throttled voice of its own */
+    if (
+      ready &&
+      activeSection < 2 &&
+      s.fade > 0.55 &&
+      pointerVelocity > 1.45 &&
+      t - lastBlobCue.current > 1.7
+    ) {
+      lastBlobCue.current = t
+      playCue('blob', { intensity: Math.min(1, pointerVelocity / 3.2) })
+    }
 
     material.uniforms.uTime.value = t
     material.uniforms.uAmp.value = s.amp

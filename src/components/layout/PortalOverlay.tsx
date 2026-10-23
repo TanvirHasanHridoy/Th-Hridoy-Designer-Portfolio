@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import gsap from 'gsap'
 import { ArrowUpRight, X } from 'lucide-react'
 import { useUI } from '../../store/store'
+import { playCue } from '../../audio/engine'
 import { scrollToSection } from '../../hooks/useSmoothScroll'
 import { GithubMark, LinkedinMark } from '../ui/BrandIcons'
 
@@ -59,6 +60,14 @@ export default function PortalOverlay() {
   const portalOpen = useUI((s) => s.portalOpen)
   const setPortalOpen = useUI((s) => s.setPortalOpen)
   const panelRef = useRef<HTMLDivElement>(null)
+  const wasPortalOpen = useRef(false)
+
+  /* entrance / exit voice */
+  useEffect(() => {
+    if (portalOpen) playCue('portal')
+    else if (wasPortalOpen.current) playCue('close')
+    wasPortalOpen.current = portalOpen
+  }, [portalOpen])
 
   /* Escape closes + entrance/exit tween */
   useEffect(() => {

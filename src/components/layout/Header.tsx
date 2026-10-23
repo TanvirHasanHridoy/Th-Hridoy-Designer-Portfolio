@@ -43,7 +43,7 @@ function SoundToggle() {
       type="button"
       data-cursor-variant="magnetic"
       data-cursor=""
-      aria-label={soundOn ? 'Mute ambient sound' : 'Play ambient sound'}
+      aria-label={soundOn ? 'Mute sound' : 'Enable sound'}
       onClick={() => setSoundOn(!soundOn)}
       className={cn(
         'pill pointer-events-auto !gap-2.5 !px-4 btn-blank transition-colors',

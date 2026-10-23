@@ -1,6 +1,7 @@
 import { useUI } from './store/store'
 import { useSmoothScroll } from './hooks/useSmoothScroll'
 import { useAmbientAudio } from './hooks/useAmbientAudio'
+import { useHoverSounds } from './hooks/useHoverSounds'
 import { useThemeSync } from './hooks/useThemeSync'
 import { useSectionTracking } from './hooks/useSectionTracking'
 import CustomCursor from './components/cursor/CustomCursor'
@@ -37,6 +38,7 @@ export default function App() {
 
   useSmoothScroll(!ready || portalOpen)
   useAmbientAudio(soundOn)
+  useHoverSounds()
   useThemeSync()
   useSectionTracking()
 
