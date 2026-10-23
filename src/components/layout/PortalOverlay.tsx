@@ -175,7 +175,7 @@ export default function PortalOverlay() {
             data-cursor="CLOSE"
             data-cursor-variant="view"
             aria-label="Close portal"
-            className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+            className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
           >
             <X size={18} />
           </button>
@@ -210,7 +210,7 @@ export default function PortalOverlay() {
                 data-cursor-variant="magnetic"
                 data-cursor=""
                 aria-label="GitHub"
-                className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+                className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
               >
                 <GithubMark />
               </a>
@@ -221,7 +221,7 @@ export default function PortalOverlay() {
                 data-cursor-variant="magnetic"
                 data-cursor=""
                 aria-label="LinkedIn"
-                className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+                className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
               >
                 <LinkedinMark />
               </a>
@@ -237,7 +237,7 @@ export default function PortalOverlay() {
                   key={exp.index}
                   className="group flex items-start gap-5 border-b border-line py-4 first:pt-0 last:border-b-0"
                 >
-                  <span className="eyebrow shrink-0 pt-1" style={{ color: 'var(--c-accent)' }}>
+                  <span className="eyebrow shrink-0 pt-1" style={{ color: 'var(--c-accent-ink)' }}>
                     {exp.index}
                   </span>
                   <div className="flex-1">

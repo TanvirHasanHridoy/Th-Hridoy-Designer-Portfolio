@@ -26,20 +26,25 @@ export default function Footer() {
   const [now, setNow] = useState(() => new Date())
   const portalProgress = useRef(0)
 
-  /* the portal bar only fades in once the footer owns the viewport —
-     checked in the existing ticker loop (avoid stale ScrollTrigger math
-     when the browser restores a mid-page scroll position on reload) */
+  /* The portal bar is a bottom-of-page gesture, not a general footer
+     chrome. Keep it hidden while the contact details / form are being read,
+     then reveal it at the same near-bottom threshold the wheel charge uses.
+     Checked on a timer so browser-restored scroll positions and dynamic
+     mobile viewports settle correctly. */
   useEffect(() => {
-    const el = footerRef.current
     const wrap = barWrapRef.current
-    if (!el || !wrap) return
+    if (!wrap) return
     let visible = false
     const check = () => {
-      const top = el.getBoundingClientRect().top
-      const want = top < window.innerHeight * 0.92
+      const limit = document.documentElement.scrollHeight - window.innerHeight
+      const slack = Math.min(120, Math.max(32, window.innerHeight * 0.1))
+      const want = window.scrollY >= limit - slack
       if (want !== visible) {
         visible = want
         wrap.style.opacity = want ? '1' : '0'
+        /* visibility (not just opacity) removes the invisible bar from
+           pointer hit-testing, tab order and the accessibility tree */
+        wrap.style.visibility = want ? 'visible' : 'hidden'
       }
     }
     check()
@@ -210,10 +215,10 @@ export default function Footer() {
         <div>
           <span className="eyebrow">located</span>
           <p className="mt-3 text-[0.95rem] font-semibold">Chemnitz, Germany</p>
-          <p className="eyebrow mt-1">Europe/Berlin · CET</p>
+          <p className="eyebrow mt-1">{PROFILE.timezone}</p>
           <p
             className="mt-2 font-mono text-[1.15rem] font-bold tracking-tight"
-            style={{ color: 'var(--c-accent)', fontVariantNumeric: 'tabular-nums' }}
+            style={{ color: 'var(--c-accent-ink)', fontVariantNumeric: 'tabular-nums' }}
           >
             {timeStr}
           </p>
@@ -245,7 +250,7 @@ export default function Footer() {
               data-cursor-variant="magnetic"
               data-cursor=""
               aria-label="GitHub"
-              className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+              className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
             >
               <GithubMark />
             </a>
@@ -256,7 +261,7 @@ export default function Footer() {
               data-cursor-variant="magnetic"
               data-cursor=""
               aria-label="LinkedIn"
-              className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+              className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
             >
               <LinkedinMark />
             </a>
@@ -378,6 +383,7 @@ export default function Footer() {
       <div
         ref={barWrapRef}
         className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-5 pb-3 opacity-0 transition-opacity duration-500 md:px-10"
+        style={{ visibility: 'hidden' }}
       >
         <button
           type="button"

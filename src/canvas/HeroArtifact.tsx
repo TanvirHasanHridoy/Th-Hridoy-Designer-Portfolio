@@ -115,6 +115,9 @@ export function HeroArtifact() {
     const { pointerLerped, pointerVelocity, activeSection, entrance } = scrollStore
     const ready = useUI.getState().ready
     const s = smooth.current
+    /* phones / portrait tablets: keep the sculpture out of the reading
+       column in About, and make it a quieter backdrop under the hero copy */
+    const compact = state.size.width < 900
 
     /* entrance ramp, pushed by the preloader completion */
     const ease = easeOutExpo(entrance)
@@ -123,7 +126,13 @@ export function HeroArtifact() {
     s.amp = damp(s.amp, ready ? 0.028 + Math.min(pointerVelocity * 0.16, 0.34) : 0, 3.2, dt)
     s.fade = damp(
       s.fade,
-      activeSection >= 2 ? 0 : ready ? 1 : 0,
+      activeSection >= 2 || (activeSection === 1 && compact)
+        ? 0
+        : ready
+          ? compact
+            ? 0.52
+            : 1
+          : 0,
       2.6,
       dt,
     )
@@ -133,7 +142,7 @@ export function HeroArtifact() {
     if (
       ready &&
       activeSection < 2 &&
-      s.fade > 0.55 &&
+      s.fade > 0.45 &&
       pointerVelocity > 1.45 &&
       t - lastBlobCue.current > 1.7
     ) {

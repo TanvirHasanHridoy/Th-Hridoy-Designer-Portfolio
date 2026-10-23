@@ -118,7 +118,7 @@ export default function About() {
                     fontWeight: 700,
                     fontSize: '2rem',
                     letterSpacing: '-0.03em',
-                    color: 'var(--c-accent)',
+                    color: 'var(--c-accent-ink)',
                     opacity: 0.55,
                   }}
                 >
@@ -168,7 +168,7 @@ export default function About() {
               <div>
                 <span className="eyebrow">located</span>
                 <p className="mt-1.5 flex items-center gap-1.5 text-[0.92rem] font-semibold">
-                  <MapPin size={14} style={{ color: 'var(--c-accent)' }} />
+                  <MapPin size={14} style={{ color: 'var(--c-accent-ink)' }} />
                   {PROFILE.location}
                 </p>
               </div>
@@ -182,7 +182,7 @@ export default function About() {
               <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
                 {PROFILE.githubStats.map((s) => (
                   <span key={s} className="flex items-center gap-1.5 eyebrow" style={{ color: 'var(--c-fg)', letterSpacing: '0.08em' }}>
-                    <Sparkles size={12} style={{ color: 'var(--c-accent)' }} />
+                    <Sparkles size={12} style={{ color: 'var(--c-accent-ink)' }} />
                     {s}
                   </span>
                 ))}
@@ -299,7 +299,7 @@ export default function About() {
                       fontWeight: 700,
                       fontSize: 'clamp(1.6rem, 2.6vw, 2.2rem)',
                       letterSpacing: '-0.03em',
-                      color: 'var(--c-accent)',
+                      color: 'var(--c-accent-ink)',
                       opacity: 0.55,
                     }}
                   >
@@ -320,7 +320,7 @@ export default function About() {
       {/* closing offer line */}
       <div className="mt-[8vh] flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-line p-5 md:p-7">
         <p className="max-w-[52ch] text-[1rem] font-semibold leading-snug">
-          Want the full CV or a stack deep-dive? The fastest path is LinkedIn.
+          Want the longer story or a stack deep-dive? The fastest path is LinkedIn.
         </p>
         <RollLink
           label="Open the LinkedIn profile"

@@ -3,8 +3,18 @@ import gsap from 'gsap'
 import { useUI } from '../store/store'
 
 const PALETTE = {
-  light: { '--c-bg': '#F0F1FA', '--c-fg': '#0A0A0E' },
-  dark: { '--c-bg': '#0A0A0E', '--c-fg': '#F0F1FA' },
+  light: {
+    '--c-bg': '#F0F1FA',
+    '--c-fg': '#0A0A0E',
+    '--c-muted': '#5F6276',
+    '--c-accent-ink': '#1A2FFB',
+  },
+  dark: {
+    '--c-bg': '#0A0A0E',
+    '--c-fg': '#F0F1FA',
+    '--c-muted': '#9093A6',
+    '--c-accent-ink': '#8B9BFF',
+  },
 } as const
 
 /**

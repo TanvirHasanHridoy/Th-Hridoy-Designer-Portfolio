@@ -8,14 +8,17 @@
   --c-bg: #f0f1fa;
   --c-bg-hard: #0a0a0e;
   --c-accent: #1a2ffb;
+  --c-accent-ink: #1a2ffb;
   --c-fg: #0a0a0e;
-  --c-muted: #6e7185;
+  --c-muted: #5f6276;
   --c-line: rgb(10 10 14 / 0.12);
   --e-io: cubic-bezier(0.65, 0.05, 0, 1);
   --e-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 [data-theme='dark'] {
+  --c-accent-ink: #8b9bff;
+  --c-muted: #9093a6;
   --c-line: rgb(240 241 250 / 0.14);
 }
 
@@ -24,6 +27,7 @@
   --color-void: var(--c-bg-hard);
   --color-fg: var(--c-fg);
   --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
   --color-muted: var(--c-muted);
   --color-line: var(--c-line);
 
@@ -75,6 +79,9 @@ body {
   outline: 2px solid var(--c-accent);
   outline-offset: 3px;
   border-radius: 2px;
+}
+[data-theme='dark'] :focus-visible {
+  outline-color: var(--c-accent-ink);
 }
 
 @media (pointer: fine) {
@@ -143,6 +150,13 @@ body {
   color: var(--c-fg);
   user-select: none;
   white-space: nowrap;
+}
+/* 320-class phones: compact the header pills so the menu never clips */
+@media (max-width: 359px) {
+  header .pill {
+    padding: 0.72em 0.95em;
+    font-size: 0.78rem;
+  }
 }
 
 .btn-sweep {
@@ -338,54 +352,6 @@ button:focus-visible .roll-stack {  transform: translateY(-50%);
 }
 @media (prefers-reduced-motion: reduce) {
   .locator-cue-icon { animation: none; opacity: 1; }
-}
-
-/* ── Showreel (Phase 3) ────────────────────────────────────── */
-.reel-bg {
-  position: absolute;
-  inset: -35%;
-  background: conic-gradient(
-    from 210deg at 35% 45%,
-    #1a2ffb,
-    #0a0a0e 32%,
-    #4b5bff 55%,
-    #15152a 74%,
-    #1a2ffb 100%
-  );
-  filter: blur(60px) saturate(1.25);
-  animation: reel-spin 16s linear infinite;
-}
-@keyframes reel-spin {
-  to { transform: rotate(360deg) scale(1.25); }
-}
-.reel-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(0deg, rgb(240 241 250 / 0.06) 0 1px, transparent 1px 72px),
-    repeating-linear-gradient(90deg, rgb(240 241 250 / 0.06) 0 1px, transparent 1px 72px);
-  mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 30%, transparent 78%);
-}
-
-/* ── Work cards (Phase 3) ──────────────────────────────────── */
-.work-visual {
-  transition:
-    transform 0.75s var(--e-io),
-    filter 0.6s var(--e-out);
-  will-change: transform;
-}
-.work-card:hover .work-visual {
-  transform: scale(1.055);
-  filter: saturate(1.3)
-    drop-shadow(1.5px 0 0 rgb(255 0 90 / 0.28))
-    drop-shadow(-1.5px 0 0 rgb(0 240 255 / 0.28));
-}
-.work-card .work-arrow {
-  transition: transform 0.5s var(--e-io), color 0.4s var(--e-out);
-}
-.work-card:hover .work-arrow {
-  transform: translate(3px, -3px) rotate(45deg);
-  color: var(--c-accent);
 }
 
 /* ── Misc ──────────────────────────────────────────────────── */

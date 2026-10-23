@@ -199,6 +199,7 @@ src/data/profile.ts (new), src/sections/About.tsx (new), src/sections/Vision.tsx
 5. Focus panel not wheel-scrollable + bad scrollbar -> panel container: `data-lenis-prevent` (lenis checks this ATTR BEFORE its stopped-guard, so the panel scrolls natively even while lenis.stop() freezes the page in focus mode), `overscroll-contain`, desktop `md:max-h-[65svh]` (was NONE: panel grew past the viewport, unreachable), mobile 56svh; slim 6px accent scrollbar + `scrollbar-width: thin` scoped to `[data-focus-panel]`. QA probe: real CDP wheel input scrolled scrollTop 0 -> 247 (content 830 / client 583).
 
 ### B. Contact form in the footer (mailto composer, no backend)
+> Superseded by §8B: the mailto composer was replaced by a private endpoint; no personal email or `mailto:` remains in the app.
 - name/email/message -> `window.location = mailto:CONTACT_EMAIL?subject=...&body=...`; subject "Portfolio inquiry - {name}", body = message + signature lines.
 - `src/data/profile.ts`: `export const CONTACT_EMAIL = ''` = wire-me mode: submit disabled + eyebrow hint "email form is getting wired - the fastest path right now is LinkedIn."; setting a real address activates the button with no other change.
 - Footer grid restructured: located | socials (now also holds the icon row + the (c) line on md+) | form glass card `md:col-span-2`; mobile legal line under the grid. New `.field` CSS (14px radius, muted placeholder, accent focus ring); Send icon.
@@ -251,7 +252,7 @@ src/canvas/ProjectModels.tsx, src/sections/FeaturedWork.tsx, src/components/layo
 
 ### G. Still queued (user-supplied)
 - `public/portrait.jpg` for the About id-card (monogram fallback is live).
-- `CONTACT_EMAIL` in src/data/profile.ts to activate the footer form (submit stays disabled + hint until set).
+- `VITE_CONTACT_ENDPOINT` (see §8B) to activate the footer form; submit stays disabled + LinkedIn fallback until set.
 
 ## 5. UPDATE - Featured Work responsive review: models + card consistency (2026-10-22, session 5)
 
@@ -308,8 +309,8 @@ src/sections/FeaturedWork.tsx, src/canvas/ProjectModels.tsx, src/styles/index.cs
 
 ### H. Notes / still queued
 - No external 3D assets introduced; all model textures remain CanvasTextures.
-- 320x568 header nav overflow (Menu pill slightly clipped) is pre-existing and untouched; the work heading/model collision at 320 is fixed.
-- Still waiting on user-supplied `public/portrait.jpg` and `CONTACT_EMAIL`.
+- 320x568 header nav overflow (Menu pill slightly clipped) was fixed in session 9 (see §9); the work heading/model collision at 320 is fixed.
+- Still waiting on user-supplied `public/portrait.jpg`; contact is now `VITE_CONTACT_ENDPOINT` (§8B).
 - Committed locally only; not pushed.
 
 ## 6. FIX - footer "continue to scroll" portal charge on touch (2026-10-22, session 6)
@@ -438,4 +439,41 @@ src/sections/Footer.tsx, HANDBOOK.md.
 - `public/portrait.jpg` is still user-supplied; the About card keeps its monogram fallback.
 - Project archive / engineering-notes page (point 5) remains queued; no routes or nav entries added.
 - The case-study page concept was discussed but **not implemented** in this pass.
+- Committed locally only; not pushed.
+
+## 9. POLISH - small-screen fit, contrast, preloader/footer cleanup (2026-10-23, session 9)
+
+### A. Header + menu at phone widths
+- Fixed the pre-existing 320px header clipping: header padding is now `p-4 sm:p-5 md:p-7`, action gaps shrink to `gap-1.5`, the sound state label is hidden below 380px (the animated EQ + `aria-label`/`title` carry it), and a `<=359px` rule compacts all header pills (0.78rem, tighter padding).
+- Measured right edges: 304/320, 344/360, 364/380, 374/390 — no clipped action at any phone width; the document never gains horizontal scroll.
+- The menu card now has `max-h-[calc(100svh-6.5rem)]`, `overflow-y-auto`, `overscroll-contain`, a thin scrollbar, and `data-lenis-prevent`. On a 568x320 landscape phone the wheel scrolled the card `scrollTop 0 -> 263` while the page stayed at `scrollY 1000`; socials become reachable. The 320x568 card scrolls 14px; 360px+ fits without scrolling.
+
+### B. Readability + content
+- Theme-aware muted text tokens: light `#5F6276` (5.34:1 on `#F0F1FA`), dark `#9093A6` (6.50:1 on `#0A0A0E`). Both are animated by `useThemeSync`.
+- Added `--c-accent-ink`: `#1A2FFB` in light, `#8B9BFF` in dark (7.75:1 for the footer clock). Used for text/icons that must stay legible on the dark Lab/Footer: clock, menu/portal numerals, social hover icons, "focus mode" label and the keyboard hint; dark focus outlines also use it.
+- Timezone copy is now `Europe/Berlin · CET / CEST`, centralised in `PROFILE.timezone` and reused by the footer.
+- Removed the About "full CV" phrase; the longer-story / stack-deep-dive path stays on LinkedIn, so no CV or email is exposed.
+- Arena keyboard hints only render for `(pointer: fine)` now, so a programmatic touch focus cannot show "Enter to open" on a phone. Sound toggle gained a `title` alongside its visible/ARIA state.
+- Removed dead `.reel-*` / `.work-*` CSS and the unreachable `XMark` menu branch.
+
+### C. Preloader, artifact, footer portal
+- **Preloader ghost fixed**: the boot labels/progress now live in `[data-pre-content]` and fade over 0.25s before the curtain starts. At `ready + 450ms` the content is `opacity: 0; visibility: hidden`, while the curtain is already at `translateY(-508.9px)` — no "THRIDOY°" text over the live page.
+- **Mobile artifact contained**: on viewports `<900px` the hero sculpture fades to 0.52 (and shrinks with the existing fade-scale coupling); in About it fades fully out, so the outlined "Based in Chemnitz, DE." heading is clear. Desktop choreography is unchanged.
+- **Footer portal bar no longer overlays contact content**: it is hidden until the document is within the same near-bottom band as the wheel/touch charge, and `visibility: hidden` removes it from hit-testing, tab order and the accessibility tree while hidden.
+- Footer top at 320/1440: bar `opacity 0`, `visibility hidden`, bottom hit test is `P`/`DIV`, not the portal button. At the page bottom it becomes visible; clicking it opens the portal. At 1440 the bar top is 851.8px while the submit button ends at 746.5px; at 320 the bar sits below the legal line.
+
+### D. QA
+- `npm run build` clean (`tsc --noEmit` + Vite production build, 2555 modules).
+- Layout sweep at 320x568, 360x800, 380x800, 390x844, 568x320, 667x375, 844x390, 768x1024 and 1440x900: no header clipping, no horizontal overflow, all three focus panels show 5 feature buttons.
+- Audio at 390x844: exactly one running `AudioContext` after enabling sound; label flips to `on`; 0 console/page errors in every pass.
+- Dark footer computed: muted contrast 6.50, clock (accent-ink) 7.75. Menu wheel, focus layout, contact fallback and portal interaction all rechecked.
+- Proof screenshots: `qa-shots/final/320-hero-final.png`, `320-about-clean.png`, `320-menu.png`, `320-footer-top.png`, `320-footer-bottom-final.png`, `1440-footer-bottom.png` (gitignored).
+
+### E. Files touched this session
+`src/components/layout/Header.tsx`, `src/components/layout/MenuOverlay.tsx`, `src/components/layout/PortalOverlay.tsx`, `src/components/layout/Preloader.tsx`, `src/canvas/HeroArtifact.tsx`, `src/data/profile.ts`, `src/hooks/useThemeSync.ts`, `src/sections/About.tsx`, `src/sections/FeaturedWork.tsx`, `src/sections/Footer.tsx`, `src/styles/index.css`, `HANDBOOK.md`.
+
+### F. Still blocked / deferred
+- Configure `VITE_CONTACT_ENDPOINT` before launch; LinkedIn is the live conversion path until then.
+- `public/portrait.jpg` remains user-supplied; the monogram fallback is live.
+- Project archive / engineering-notes page (point 5) remains deferred; the case-study page is still concept-only.
 - Committed locally only; not pushed.

@@ -385,7 +385,12 @@ export default function FeaturedWork() {
           aria-keyshortcuts="ArrowLeft ArrowRight Enter"
           aria-label="Project object carousel — left and right arrow keys browse the projects, Enter opens the featured project, drag to explore"
           onKeyDown={onArenaKeyDown}
-          onFocus={(e) => setArenaKeyboard(e.currentTarget.matches(':focus-visible'))}
+          onFocus={(e) =>
+            setArenaKeyboard(
+              e.currentTarget.matches(':focus-visible') &&
+                window.matchMedia('(pointer: fine)').matches,
+            )
+          }
           onBlur={() => setArenaKeyboard(false)}
         >
           {/* fronted-object reticle hint */}
@@ -410,7 +415,7 @@ export default function FeaturedWork() {
               opacity:
                 arenaKeyboard && !focusOpen ? 1 : hasInteracted || focusOpen ? 0 : 1,
               transition: 'opacity .6s var(--e-io)',
-              color: arenaKeyboard && !focusOpen ? 'var(--c-accent)' : undefined,
+              color: arenaKeyboard && !focusOpen ? 'var(--c-accent-ink)' : undefined,
             }}
             aria-hidden
           >
@@ -554,7 +559,7 @@ function ProjectGithubButton({ label, href, title }: { label: string; href: stri
       data-cursor-variant="magnetic"
       data-cursor="CODE"
       aria-label={`${title} on ${label}`}
-      className="grid size-11 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+      className="grid size-11 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
     >
       <GithubMark />
     </a>
@@ -647,7 +652,7 @@ function FocusPanel({
           data-cursor="RESET"
           aria-label="Reset object rotation and zoom"
           title="Reset object view"
-          className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
+          className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent-ink"
         >
           <RotateCcw size={15} />
         </button>
@@ -657,7 +662,7 @@ function FocusPanel({
           data-cursor-variant="magnetic"
           data-cursor="CLOSE"
           aria-label="Close focus mode"
-          className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
+          className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent-ink"
         >
           <X size={17} />
         </button>
@@ -674,7 +679,7 @@ function FocusPanel({
               fontWeight: 700,
               fontSize: 'clamp(2.2rem, 4vw, 3.4rem)',
               letterSpacing: '-0.04em',
-              color: 'var(--c-accent)',
+              color: 'var(--c-accent-ink)',
               opacity: 0.5,
             }}
           >
@@ -687,7 +692,7 @@ function FocusPanel({
             <span className="eyebrow rounded-full border border-line px-2.5 py-1">
               {project.year}
             </span>
-            <span className="eyebrow text-accent">focus mode</span>
+            <span className="eyebrow text-accent-ink">focus mode</span>
           </div>
         </div>
         <p className="mt-3 text-[0.92rem] leading-relaxed text-muted">
@@ -716,7 +721,7 @@ function FocusPanel({
             id="feature-locator-hint"
             className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.62rem] font-medium uppercase tracking-[0.14em]"
             style={{
-              color: 'var(--c-accent)',
+              color: 'var(--c-accent-ink)',
               borderColor: 'color-mix(in srgb, var(--c-accent) 32%, transparent)',
             }}
           >
@@ -783,7 +788,7 @@ function FocusPanel({
                   {f}
                 </span>
                 <span
-                  className="ml-auto mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border border-line text-muted opacity-35 transition-all duration-300 group-hover:border-accent group-hover:text-accent group-hover:opacity-100 group-focus-visible:border-accent group-focus-visible:text-accent group-focus-visible:opacity-100"
+                  className="ml-auto mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border border-line text-muted opacity-35 transition-all duration-300 group-hover:border-accent group-hover:text-accent-ink group-hover:opacity-100 group-focus-visible:border-accent group-focus-visible:text-accent-ink group-focus-visible:opacity-100"
                   aria-hidden
                 >
                   <Crosshair size={12} strokeWidth={2} />

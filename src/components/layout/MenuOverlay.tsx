@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { useUI } from '../../store/store'
 import { scrollToSection } from '../../hooks/useSmoothScroll'
 import { cn } from '../../utils/cn'
-import { GithubMark, LinkedinMark, XMark } from '../ui/BrandIcons'
+import { GithubMark, LinkedinMark } from '../ui/BrandIcons'
 
 const MENU_ITEMS = [
   { index: '01', label: 'Home', target: '#hero' },
@@ -108,15 +108,17 @@ export default function MenuOverlay() {
       aria-hidden={!menuOpen}
       inert={!menuOpen}
       className={cn(
-        'fixed right-5 top-[84px] z-50 w-[min(92vw,420px)] overflow-hidden rounded-[28px] border border-line shadow-[0_24px_72px_-24px_rgb(10_10_14/0.3)] md:right-7 md:top-[92px]',
+        'fixed right-5 top-[84px] z-50 max-h-[calc(100svh-6.5rem)] w-[min(92vw,420px)] overflow-y-auto overscroll-contain rounded-[28px] border border-line shadow-[0_24px_72px_-24px_rgb(10_10_14/0.3)] md:right-7 md:top-[92px]',
       )}
       style={{
         background: 'color-mix(in srgb, var(--c-bg) 90%, transparent)',
         backdropFilter: 'blur(18px)',
         WebkitBackdropFilter: 'blur(18px)',
         visibility: menuOpen ? 'visible' : 'hidden',
+        scrollbarWidth: 'thin',
       }}
       data-menu-card
+      data-lenis-prevent=""
     >
       <div className="flex flex-col px-6 pb-5 pt-4 md:px-8 md:pt-5">
         <nav className="flex flex-col">
@@ -139,7 +141,7 @@ export default function MenuOverlay() {
                 }}
                 className="group flex items-baseline gap-4 py-2.5 md:py-3"
               >
-                <span className="eyebrow shrink-0" style={{ color: 'var(--c-accent)' }}>
+                <span className="eyebrow shrink-0" style={{ color: 'var(--c-accent-ink)' }}>
                   {item.index}
                 </span>
                 <span
@@ -150,7 +152,7 @@ export default function MenuOverlay() {
                 </span>
                 <ArrowUpRight
                   size={22}
-                  className="ml-auto shrink-0 self-center text-muted opacity-0 transition-all duration-500 group-hover:rotate-45 group-hover:text-accent group-hover:opacity-100"
+                  className="ml-auto shrink-0 self-center text-muted opacity-0 transition-all duration-500 group-hover:rotate-45 group-hover:text-accent-ink group-hover:opacity-100"
                   style={{ transitionTimingFunction: 'var(--e-io)' }}
                 />
               </a>
@@ -170,15 +172,9 @@ export default function MenuOverlay() {
                 data-cursor-variant="magnetic"
                 data-cursor={social.label === 'GitHub' ? 'GIT' : undefined}
                 aria-label={social.label}
-                className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent"
+                className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors duration-300 hover:border-accent hover:text-accent-ink"
               >
-                {social.label === 'GitHub' ? (
-                  <GithubMark />
-                ) : social.label === 'LinkedIn' ? (
-                  <LinkedinMark />
-                ) : (
-                  <XMark />
-                )}
+                {social.label === 'GitHub' ? <GithubMark /> : <LinkedinMark />}
               </a>
             ))}
           </div>

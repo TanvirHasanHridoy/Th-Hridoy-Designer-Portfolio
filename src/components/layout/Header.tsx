@@ -44,16 +44,20 @@ function SoundToggle() {
       data-cursor-variant="magnetic"
       data-cursor=""
       aria-label={soundOn ? 'Mute sound' : 'Enable sound'}
+      title={soundOn ? 'Mute sound' : 'Enable sound'}
       onClick={() => setSoundOn(!soundOn)}
       className={cn(
-        'pill pointer-events-auto !gap-2.5 !px-4 btn-blank transition-colors',
+        'pill pointer-events-auto !gap-2.5 !px-3 min-[360px]:!px-4 btn-blank transition-colors',
         theme === 'dark' ? 'border-white/15' : '',
       )}
     >
       <span className={cn('eq', soundOn && 'is-on')} aria-hidden>
         <i /><i /><i /><i /><i />
       </span>
-      <span className="eyebrow" style={{ color: 'inherit', letterSpacing: '0.1em' }}>
+      <span
+        className="eyebrow hidden min-[380px]:inline"
+        style={{ color: 'inherit', letterSpacing: '0.1em' }}
+      >
         {soundOn ? 'on' : 'off'}
       </span>
     </button>
@@ -107,9 +111,9 @@ function MenuButton() {
 
 export default function Header() {
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between p-5 md:p-7">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between p-4 sm:p-5 md:p-7">
       <Monogram />
-      <div className="flex items-center gap-2 md:gap-2.5">
+      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5">
         <SoundToggle />
         <TalkCTA />
         <MenuButton />

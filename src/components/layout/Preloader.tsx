@@ -35,6 +35,13 @@ export default function Preloader() {
     })
     /* counter exits through its own mask first */
     tl.to('[data-pre-count]', { yPercent: -115, duration: 0.45, ease: 'power3.in' }, '+=0.25')
+    /* the boot labels/progress live outside the curtain panels; fade them
+       before the panels lift so they can never ghost over the live page */
+    tl.to(
+      '[data-pre-content]',
+      { autoAlpha: 0, duration: 0.25, ease: 'power2.in' },
+      '-=0.05',
+    )
     /* curtains away — flips `ready`, which starts the hero camera entrance */
     tl.to(
       '[data-curtain]',
@@ -45,7 +52,7 @@ export default function Preloader() {
         stagger: 0.09,
         onStart: () => setReady(true),
       },
-      '-=0.15',
+      '-=0.1',
     )
     tl.add(() => setGone(true))
 
@@ -65,7 +72,7 @@ export default function Preloader() {
       </div>
 
       {/* content */}
-      <div className="relative flex h-full flex-col justify-between p-6 md:p-10">
+      <div data-pre-content className="relative flex h-full flex-col justify-between p-6 md:p-10">
         <div className="flex items-center justify-between text-[#F0F1FA]">
           <span className="text-[13px] font-semibold tracking-tight">THRIDOY°</span>
           <span className="eyebrow" style={{ color: 'rgba(240,241,250,0.55)' }}>

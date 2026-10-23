@@ -16,7 +16,7 @@ export const PROFILE = {
    */
   photo: '/portrait.jpg',
   location: 'Chemnitz, Germany',
-  timezone: 'Europe/Berlin · CET',
+  timezone: 'Europe/Berlin · CET / CEST',
   /**
    * One-line pitch — mirrors the GitHub headline:
    * "Web Developer | React.js & Node.js | Open to Working Student &
