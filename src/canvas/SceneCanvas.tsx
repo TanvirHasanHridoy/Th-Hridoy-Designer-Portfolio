@@ -7,6 +7,7 @@ import { HeroArtifact } from './HeroArtifact'
 import { ParticleField } from './ParticleField'
 import { CameraRig } from './CameraRig'
 import { WorkCarousel } from './WorkCarousel'
+import { QualityGovernor } from './QualityGovernor'
 
 /* the rapier world (+ its WASM payload) only loads when the Lab approaches */
 const PhysicsPit = lazy(() =>
@@ -17,6 +18,14 @@ const PhysicsPit = lazy(() =>
 const compactDevice =
   typeof window !== 'undefined' &&
   (window.innerWidth < 768 || (navigator.hardwareConcurrency ?? 8) <= 4)
+
+/* never supersample beyond the display; adaptive governor can step down */
+const displayDpr =
+  typeof window !== 'undefined' ? Math.min(2, window.devicePixelRatio || 1) : 1
+const initialQuality =
+  typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('quality')
+    : null
 
 /**
  * THE persistent WebGL canvas.
@@ -30,7 +39,7 @@ export function SceneCanvas() {
   return (
     <div aria-hidden className="fixed inset-0 z-0" style={{ pointerEvents: 'none' }}>
       <Canvas
-        dpr={[1, 2]}
+        dpr={[1, initialQuality === 'low' ? 1 : displayDpr]}
         camera={{ position: [0, 0.1, 16], fov: 50, near: 0.1, far: 80 }}
         gl={{
           antialias: true,
@@ -40,6 +49,7 @@ export function SceneCanvas() {
         }}
         style={{ position: 'fixed', inset: 0 }}
       >
+        <QualityGovernor maxDpr={displayDpr} />
         <Suspense fallback={null}>
           <CameraRig />
 

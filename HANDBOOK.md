@@ -380,3 +380,62 @@ src/sections/Footer.tsx, HANDBOOK.md.
 - Real-device cost of DPR 2 + MSAA has not been measured; adaptive quality is the next planned pass.
 - Still waiting on `public/portrait.jpg` and a non-personal contact endpoint/address strategy.
 - Committed and pushed as the session-7 checkpoint.
+
+## 8. PASS - adaptive quality, private conversion, locator accuracy, focus polish, JobFlow model (2026-10-23, session 8)
+
+### A. Adaptive render quality
+- Added `src/canvas/QualityGovernor.tsx`; wired into `SceneCanvas` so the single persistent canvas starts at native DPR capped at 2 and samples frame pacing in 1.8s windows.
+- Warm-up is 2.6s; sustained FPS below 42 drops DPR by 0.25 (floor 1), above 57 raises it back toward the cap; a 3s cooldown follows every change. Hidden tabs reset the window instead of poisoning the sample with a suspended-frame gap.
+- `?quality=high` locks native DPR for visual QA; `?quality=low` pins DPR 1. MSAA stays at the initial tier (4 desktop / 2 compact) because changing composer samples at runtime would rebuild the post stack.
+- QA at 1440x900 with DPR 2 (SwiftShader): high = 2, low = 1; auto stepped `2 -> 1.75 -> 1.5` under software rendering, and CPU-throttled auto also dropped cleanly. 0 console/page errors.
+- The DPR cap is still 2 rather than native 3 on phones; that remains the performance/memory tradeoff.
+
+### B. Conversion without exposing personal data
+- Contact now posts to a private `VITE_CONTACT_ENDPOINT` (Formspree, Web3Forms, Basin, or a serverless route). No CV download, personal email, or `mailto:` exists in the app; the only email-looking string is the `you@company.com` placeholder.
+- Added `.env.example` with setup notes; `.gitignore` keeps local env files private while allowing the example. Configure the variable in Vercel as well as locally.
+- When the endpoint is missing the submit is disabled, the footer explains that the direct form is offline, and a prominent **Message on LinkedIn** CTA is the fallback. On a send error the same LinkedIn CTA appears instead of leaving the user at a dead end.
+- Submission uses JSON, trims fields, includes a hidden honeypot, and exposes sending/sent/error states through `role="status"` / `aria-live`. The form is async and never navigates.
+- QA with a temporary endpoint and mocked responses: enabled submit posted `{name,email,message,_subject,source}`, then cleared fields and showed "message received"; a mocked 500 kept the fields, showed the error, and revealed the LinkedIn fallback. The unconfigured 5174 build shows disabled submit + LinkedIn CTA, honeypot `tabIndex=-1`, 0 overflow.
+- Still blocked on a real endpoint/provider; until one is supplied, LinkedIn is the live conversion path.
+
+### C. Feature locator accuracy
+- Root cause: `HotspotRing` anchors lived outside the model groups that receive pointer parallax. Moving the pointer toward the feature panel rotated the panel/board while the ring stayed in world space, so the ring drifted off the part it was supposed to mark.
+- JobFlow now has two rings: the app-face ring (ATS gauge, kanban, PDF) lives inside the rotating `panel`, while the external ring (chips, CV sheet) stays in root space. `HotspotRing` gained an `only` filter so each ring only claims its own feature indices.
+- Sudoku's ring moved inside the board group; NapTrip's ring moved inside the pod group. Both now follow the same pointer tilt as their targets.
+- Recalibrated anchors: Sudoku P2P voice now centres the equalizer; Sudoku control strip centres the timer/controls; NapTrip departure board sits on the board (not above it); JobFlow gauge/board/PDF anchors are derived from the texture coordinates.
+- Skill chips now fly out while their feature row is hovered, so the locator no longer points at empty space. JobFlow score gauge, PDF button, and kanban board are always visible targets.
+- `LOCATE` cursor reduced 68px -> 60px; the label still fits and the disc blocks less feature copy.
+- Touch interaction is now truly two-step: first tap locates, second tap runs the animation. Pointer enter/leave ignores `pointerType === 'touch'`, and focus only claims a hotspot for keyboard/pointer users. Desktop hover + click remains one-step.
+- QA: all 15 anchors were exercised on desktop under pointer tilt, plus the JobFlow external chips/CV ring; mobile focus at 390x844 with no overflow. Custom cursor probe reports 60x60 with label `LOCATE`; actual row hover set hotspot 0, click ran `score`, mouse leave cleared it.
+
+### D. Focus-mode polish
+- Added a visible reset-view button (yaw, pitch, velocities, zoom) next to Close; verified it returns `modelSpin` to `{yaw:0,pitch:0,zoomTarget:1}`.
+- Close is the initial focus target. Keyboard hints are explicit in the panel; `←/→` switches projects and Escape closes.
+- Removed the desktop overlay hint chip that duplicated the header copy. On the phone bottom-sheet layout, the hint now lives inside the panel (`drag to rotate · tap to replay`), so it cannot cover the model.
+- Feature instructions are responsive: desktop says hover/focus + click; touch says tap to locate, tap again to run.
+- QA at 390x844: panel fits with `overflowX=0`, reset/close 40x40 and in bounds, model clear above the sheet; no console/page errors.
+
+### E. JobFlow model
+- The ATS match score is now **on the application surface**, inside the right-hand ATS card: static outer gauge, score texture, white needle that sweeps only during the score action. It no longer rotates as a separate floating badge.
+- The gauge anchors live in the panel's rotated space, so the locator follows the tilt.
+- Added a distinct green **PDF EXPORT** pill (`VECTOR · DIN 5008`) with its own locator target.
+- Added a compact four-column kanban board baked into the app (`SAVED / TAILORED`, `APPLIED`, `INTERVIEW`, `OFFER`) with counts, role cards, match percentages, an empty "AWAITING LOOP" interview target, and a violet column glow that walks the board during the kanban action.
+- Kept the intentional four-column simplification (the reference has five; `REJECTED` is omitted to fit the miniature). Skill chips (`EXACT`, `ADJACENT`, `MISSING`) still fly out on the chips action/hover.
+- Overall model text remains generated CanvasTextures; no external assets.
+
+### F. QA summary
+- `npm run build` clean (`tsc --noEmit` + Vite production build).
+- Desktop 1440x900: all three models, all 15 feature anchors, focus reset, cursor size, JobFlow chips/PDF/kanban, contact states; 0 console/page errors.
+- Mobile 390x844 (touch/DPR2): focus sheet, no horizontal overflow, reset, feature rows, footer CTA; 0 console/page errors.
+- Contact mocked 200 and 500; quality high/low/auto; no page errors (the mocked 500 produces the expected browser network log).
+- Proof: `C:\Users\thhri\AppData\Local\Temp\opencode\tilt-shots\`, `...\crop-shots\`, `...\hover-shots\`, `...\action-shots\`, `...\mobile-shots\`. QA scripts were temporary and removed before commit.
+
+### G. Files touched this session
+`src/canvas/QualityGovernor.tsx` (new), `src/canvas/SceneCanvas.tsx`, `src/canvas/ProjectModels.tsx`, `src/components/cursor/CustomCursor.tsx`, `src/data/profile.ts`, `src/sections/FeaturedWork.tsx`, `src/sections/Footer.tsx`, `src/store/store.ts`, `.env.example`, `.gitignore`, `HANDBOOK.md`.
+
+### H. Notes / still queued
+- Configure `VITE_CONTACT_ENDPOINT` before launch; the form intentionally remains disabled otherwise.
+- `public/portrait.jpg` is still user-supplied; the About card keeps its monogram fallback.
+- Project archive / engineering-notes page (point 5) remains queued; no routes or nav entries added.
+- The case-study page concept was discussed but **not implemented** in this pass.
+- Committed locally only; not pushed.

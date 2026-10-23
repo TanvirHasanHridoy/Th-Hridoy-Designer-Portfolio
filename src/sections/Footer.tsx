@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from 'react'
 import gsap from 'gsap'
 import { ArrowUpRight, Send } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
@@ -7,7 +7,7 @@ import RollLink from '../components/ui/RollLink'
 import { GithubMark, LinkedinMark } from '../components/ui/BrandIcons'
 import { useUI } from '../store/store'
 import { damp } from '../store/scrollStore'
-import { CONTACT_EMAIL } from '../data/profile'
+import { CONTACT_ENDPOINT, PROFILE } from '../data/profile'
 
 /* smoothed-fill holder lives on the bar element itself */
 type FillEl = HTMLSpanElement & { __smooth?: number }
@@ -62,30 +62,47 @@ export default function Footer() {
     hour12: false,
   }).format(now)
 
-  /* contact form — composes a pre-filled mail: draft (no backend). The
-     submit stays disabled with a hint until `CONTACT_EMAIL` is wired in
-     src/data/profile.ts. */
+  /* contact form — posts to a private form endpoint, so no personal email
+     address is exposed. The submit stays disabled until the endpoint is
+     supplied via VITE_CONTACT_ENDPOINT; LinkedIn is the fallback. */
   const [form, setForm] = useState({ name: '', email: '', message: '' })
-  const [mailSent, setMailSent] = useState(false)
-  const inboxReady = CONTACT_EMAIL.trim().length > 3
-  const mailtoHref = useMemo(() => {
-    const subject = `Portfolio inquiry — ${form.name.trim() || 'someone from the site'}`
-    const body = [form.message.trim(), '', `— ${form.name.trim()}`, form.email.trim()]
-      .filter(Boolean)
-      .join('\n')
-    return `mailto:${CONTACT_EMAIL.trim()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  }, [form])
+  const [trap, setTrap] = useState('')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const inboxReady = CONTACT_ENDPOINT.length > 0
 
   const setField =
-    (key: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (key: keyof typeof form) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((f) => ({ ...f, [key]: e.target.value }))
+      if (status !== 'idle' && status !== 'sending') setStatus('idle')
+    }
 
-  const onFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const onFormSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!inboxReady) return
-    window.location.href = mailtoHref
-    setMailSent(true)
-    window.setTimeout(() => setMailSent(false), 7000)
+    if (!inboxReady || status === 'sending') return
+    /* honeypot — silently accept without forwarding obvious bots */
+    if (trap) {
+      setStatus('sent')
+      return
+    }
+    setStatus('sending')
+    try {
+      const res = await fetch(CONTACT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          message: form.message.trim(),
+          _subject: `Portfolio inquiry — ${form.name.trim() || 'someone from the site'}`,
+          source: 'portfolio',
+        }),
+      })
+      if (!res.ok) throw new Error(`Contact endpoint returned ${res.status}`)
+      setForm({ name: '', email: '', message: '' })
+      setStatus('sent')
+    } catch {
+      setStatus('error')
+    }
   }
 
   /* push-past-bottom detection → portal charge. Mouse: repeated wheel
@@ -247,7 +264,7 @@ export default function Footer() {
           <span className="eyebrow mt-6 hidden md:block">© 2026 S M Tanvir Hasan Hridoy</span>
         </div>
 
-        {/* direct-message form — composes a mail draft, no backend */}
+        {/* direct-message form — private endpoint, no email exposed */}
         <div className="md:col-span-2">
           <span className="eyebrow">direct message</span>
           <div
@@ -259,6 +276,20 @@ export default function Footer() {
             }}
           >
             <form onSubmit={onFormSubmit} className="grid gap-3.5">
+              {/* honeypot: visually hidden, never tabbable */}
+              <label
+                aria-hidden="true"
+                className="absolute -left-[9999px] top-auto h-px w-px overflow-hidden"
+              >
+                <span>Website</span>
+                <input
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={trap}
+                  onChange={(e) => setTrap(e.target.value)}
+                />
+              </label>
               <div className="grid gap-3.5 sm:grid-cols-2">
                 <label className="grid gap-2">
                   <span className="eyebrow">name</span>
@@ -301,20 +332,37 @@ export default function Footer() {
               <div className="flex flex-wrap items-center gap-4">
                 <button
                   type="submit"
-                  disabled={!inboxReady}
-                  data-cursor={inboxReady ? 'SEND' : ''}
+                  disabled={!inboxReady || status === 'sending'}
+                  data-cursor={inboxReady ? 'SEND' : undefined}
                   data-cursor-variant="magnetic"
                   className="pill btn-sweep !py-3.5 !text-[0.9rem] !px-6 disabled:!opacity-40"
                 >
-                  Send message
+                  {status === 'sending' ? 'Sending…' : 'Send message'}
                   <Send size={15} />
                 </button>
-                <span className="eyebrow" aria-live="polite">
-                  {inboxReady
-                    ? mailSent
-                      ? 'draft opened in your mail app — hit send there.'
-                      : 'opens a pre-filled mail draft — no backend.'
-                    : 'email form is getting wired — the fastest path right now is LinkedIn.'}
+                {(!inboxReady || status === 'error') && (
+                  <a
+                    href={PROFILE.links.linkedin}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-cursor="OPEN"
+                    data-cursor-variant="magnetic"
+                    className="pill !px-5 !py-3.5 !text-[0.9rem]"
+                  >
+                    Message on LinkedIn
+                    <LinkedinMark />
+                  </a>
+                )}
+                <span className="eyebrow" role="status" aria-live="polite">
+                  {!inboxReady
+                    ? 'direct form is offline — the fastest path right now is LinkedIn.'
+                    : status === 'sending'
+                      ? 'sending your message…'
+                      : status === 'sent'
+                        ? 'message received — thanks for reaching out.'
+                        : status === 'error'
+                          ? 'could not send — please use LinkedIn instead.'
+                          : 'sends through a private form endpoint — no email address exposed.'}
                 </span>
               </div>
             </form>

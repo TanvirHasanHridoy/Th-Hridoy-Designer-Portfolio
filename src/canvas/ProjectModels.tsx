@@ -13,7 +13,7 @@ import { useUI } from '../store/store'
  * appear as standalone, perpetually animating 3D objects (no cards, no
  * slabs), each modelled on its product's real visual language:
  *   • JobFlow    — the dark-violet Career Suite app window (workflow guide
- *                  01–04, Gemini badge, ATS match dial, skill chips)
+ *                  01–04, Gemini badge, ATS match gauge, skill chips)
  *   • Co-doku    — the competitive hub: neon-wolf ELO medallion, bolt logo
  *                  tile, live sudoku arena + sabotage keypad
  *   • NapTrip    — a night sleeper-pod diorama: crescent moon, alarm clock
@@ -99,6 +99,23 @@ export type HotspotAnchors = Array<[number, number, number, number]> // x, y, z,
    (the rows are baked into suiteTexture: 01–04 at y 272 + i·224 px) */
 const JOBFLOW_ROW_Y = [0.85, 0.3626, -0.126, -0.614]
 
+/* the on-app kanban board's four column centres (suite-texture local space) */
+const JOBFLOW_BOARD_Y = -1.104
+const JOBFLOW_COL_X = [-0.752, -0.262, 0.228, 0.718]
+
+/* ATS gauge centre, mapped from the suite texture's (820, 386) card */
+const JOBFLOW_GAUGE: [number, number] = [0.6616, 0.6841]
+
+/* the five feature anchors; app features (0/3/4) live in the panel's rotated
+   space, while the chips + CV sheet stay in the root's space */
+const JOBFLOW_ANCHORS: HotspotAnchors = [
+  [JOBFLOW_GAUGE[0], JOBFLOW_GAUGE[1], 0.12, 0.4], // ATS match gauge on the app
+  [1.58, 0.02, 0.24, 0.6], // skill-classification chip cascade
+  [-1.74, -0.12, 0.46, 0.72], // live CV sheet — DIN 5008 templates
+  [0, JOBFLOW_BOARD_Y, 0.14, 0.52], // mini kanban board on the app
+  [JOBFLOW_GAUGE[0], 0.163, 0.12, 0.31], // PDF export button on the app
+]
+
 const AFDUR: Record<string, number> = {
   score: 2.6,
   chips: 3.2,
@@ -121,10 +138,13 @@ const AFDUR: Record<string, number> = {
 function HotspotRing({
   anchors,
   feature,
+  only,
   color = ACCENT,
 }: {
   anchors: HotspotAnchors
   feature: () => number
+  /** restrict this ring to a subset of feature indices (split anchor spaces) */
+  only?: number[]
   color?: string
 }) {
   const ref = useRef<THREE.Group>(null)
@@ -140,14 +160,15 @@ function HotspotRing({
     const ring = ringMat.current
     const dot = dotMat.current
     if (!g || !ring || !dot) return
-    const h = feature()
-    if (h < 0 || h >= anchors.length) {
+    const h = Math.round(feature())
+    const shown = h >= 0 && h < anchors.length && (!only || only.includes(h))
+    if (!shown) {
       ring.opacity = damp(ring.opacity, 0, 6, dt)
       dot.opacity = damp(dot.opacity, 0, 6, dt)
       g.visible = ring.opacity > 0.012
       return
     }
-    const a = anchors[Math.round(h)]
+    const a = anchors[h]
     const targetR = Math.max(a[3], 0.4)
     cur.current.x = damp(cur.current.x, a[0], 9, dt)
     cur.current.y = damp(cur.current.y, a[1], 9, dt)
@@ -206,7 +227,7 @@ type ActT = Record<string, number>
 /* =============================================================== JobFlow AI
  * Rebuilt on job-flow.devhridoy.site's real look: a dark-violet "career
  * suite" app window — J logo mark, Gemini engine badge, the numbered
- * 01–04 workflow guide, ATS match dial, skill-classification chips.      */
+ * 01–04 workflow guide, ATS match gauge, skill-classification chips.      */
 const suiteTexture = () =>
   makeTex(1024, 1400, (g) => {
     g.fillStyle = '#151128'
@@ -346,18 +367,140 @@ const suiteTexture = () =>
       }
     })
 
-    /* pipeline track label */
+    /* ATS match card — the score lives on the application surface, not in a
+       separately spinning badge. The 3D gauge + needle sit on this card. */
+    g.fillStyle = 'rgba(124,92,255,.07)'
+    g.beginPath()
+    g.roundRect(672, 210, 296, 352, 28)
+    g.fill()
+    g.strokeStyle = 'rgba(139,124,255,.32)'
+    g.lineWidth = 3
+    g.stroke()
+    g.fillStyle = VIOLET
+    g.font = MONO(22)
+    g.textAlign = 'center'
+    g.fillText('ATS MATCH', 820, 230)
+    g.fillStyle = 'rgba(236,235,255,.42)'
+    g.font = MONO(15)
+    g.fillText('DETERMINISTIC · 100% AUDITABLE', 820, 540)
+
+    /* PDF export button — a distinct target for the vector-PDF feature */
+    g.fillStyle = 'rgba(16,185,129,.1)'
+    g.beginPath()
+    g.roundRect(672, 584, 296, 82, 22)
+    g.fill()
+    g.strokeStyle = 'rgba(16,185,129,.4)'
+    g.lineWidth = 3
+    g.stroke()
+    g.strokeStyle = '#6EE7B7'
+    g.lineWidth = 4
+    g.beginPath()
+    g.roundRect(700, 604, 34, 42, 5)
+    g.stroke()
+    g.beginPath()
+    g.moveTo(708, 618)
+    g.lineTo(726, 618)
+    g.moveTo(708, 628)
+    g.lineTo(726, 628)
+    g.moveTo(708, 638)
+    g.lineTo(720, 638)
+    g.stroke()
+    g.textAlign = 'left'
+    g.fillStyle = '#6EE7B7'
+    g.font = MONO(20)
+    g.fillText('PDF EXPORT', 752, 628)
+    g.fillStyle = 'rgba(236,235,255,.38)'
+    g.font = MONO(14)
+    g.fillText('VECTOR · DIN 5008', 752, 654)
+
+    /* small live kanban board — four columns from the real application */
     g.fillStyle = VIOLET
     g.font = MONO(24)
-    g.fillText('APPLICATION PIPELINE', 56, 1206)
-    g.fillStyle = 'rgba(236,235,255,.12)'
-    g.beginPath()
-    g.roundRect(56, 1236, 520, 12, 6)
-    g.fill()
+    g.fillText('APPLICATION PIPELINE', 56, 1092)
+    g.fillStyle = 'rgba(236,235,255,.34)'
+    g.font = MONO(16)
+    g.textAlign = 'right'
+    g.fillText('LIVE BOARD', 968, 1092)
+    g.textAlign = 'left'
+
+    const columns = [
+      { label: 'SAVED / TAILORED', count: '16', color: '#8B5CF6', role: 'Software Engineer', meta: 'Mönneke · 9d', match: '92%' },
+      { label: 'APPLIED', count: '05', color: '#5B8CFF', role: 'Full-stack Dev', meta: 'Sopra · 21d', match: '68%' },
+      { label: 'INTERVIEW', count: '00', color: '#A78BFA', role: '', meta: '', match: '' },
+      { label: 'OFFER', count: '02', color: '#10B981', role: 'Frontend Dev', meta: 'SC Media · 31d', match: '81%' },
+    ]
+    columns.forEach((col, i) => {
+      const x = 56 + i * 228
+      const y = 1118
+      const w = 212
+      const h = 178
+      g.fillStyle = 'rgba(236,235,255,.035)'
+      g.beginPath()
+      g.roundRect(x, y, w, h, 16)
+      g.fill()
+      g.strokeStyle = 'rgba(236,235,255,.08)'
+      g.lineWidth = 2
+      g.stroke()
+      /* column title + count */
+      g.fillStyle = col.color
+      g.font = MONO(15)
+      g.fillText(col.label, x + 12, y + 24)
+      g.fillStyle = 'rgba(236,235,255,.08)'
+      g.beginPath()
+      g.roundRect(x + w - 44, y + 10, 32, 21, 10)
+      g.fill()
+      g.fillStyle = 'rgba(236,235,255,.55)'
+      g.font = MONO(12)
+      g.textAlign = 'center'
+      g.fillText(col.count, x + w - 28, y + 21)
+      g.textAlign = 'left'
+      if (!col.role) {
+        /* empty interview column: dashed drop target */
+        g.strokeStyle = 'rgba(236,235,255,.13)'
+        g.setLineDash([6, 6])
+        g.beginPath()
+        g.roundRect(x + 10, y + 48, w - 20, 92, 12)
+        g.stroke()
+        g.setLineDash([])
+        g.fillStyle = 'rgba(236,235,255,.24)'
+        g.font = MONO(13)
+        g.textAlign = 'center'
+        g.fillText('AWAITING LOOP', x + w / 2, y + 96)
+        g.textAlign = 'left'
+        return
+      }
+      /* mini application card */
+      g.fillStyle = '#1D1838'
+      g.beginPath()
+      g.roundRect(x + 10, y + 48, w - 20, 92, 12)
+      g.fill()
+      g.strokeStyle = 'rgba(139,124,255,.2)'
+      g.lineWidth = 2
+      g.stroke()
+      g.fillStyle = col.color
+      g.beginPath()
+      g.roundRect(x + 20, y + 59, 28, 28, 8)
+      g.fill()
+      g.fillStyle = '#FFF'
+      g.font = MONO(11)
+      g.textAlign = 'center'
+      g.fillText('EN', x + 34, y + 73)
+      g.fillStyle = '#6EE7B7'
+      g.font = MONO(15)
+      g.textAlign = 'right'
+      g.fillText(col.match, x + w - 20, y + 73)
+      g.textAlign = 'left'
+      g.fillStyle = TXT
+      g.font = JAK(16, 700)
+      g.fillText(col.role, x + 20, y + 103)
+      g.fillStyle = 'rgba(236,235,255,.38)'
+      g.font = MONO(12)
+      g.fillText(col.meta, x + 20, y + 123)
+    })
 
     g.fillStyle = 'rgba(236,235,255,.34)'
     g.font = MONO(20)
-    g.fillText('NEXT.JS 16 · DEEPSEEK · PRISMA · SUPABASE · REACT-PDF', 56, 1344)
+    g.fillText('NEXT.JS 16 · DEEPSEEK · PRISMA · SUPABASE · REACT-PDF', 56, 1360)
   })
 
 /** soft radial glow sprite (violet for the suite, moonlit indigo for the pod) */
@@ -441,7 +584,7 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
       g.fillText('92', 256, 240)
       g.fillStyle = CYAN2
       g.font = MONO(30)
-      g.fillText('ATS MATCH', 256, 424)
+      g.fillText('MATCH SCORE', 256, 424)
     }),
     [],
   )
@@ -554,7 +697,7 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
        the product's real workflow, end to end:
        0.0–1.1s  CV sheet slides in beside the suite (a live document)
        1.1–3.3s  workflow rows 01 → 04 light up and tick off one by one
-       3.3–4.6s  the ATS dial needle sweeps from 38 to 92
+       3.3–4.6s  the ATS gauge needle sweeps from 38 to 92
        4.6–5.4s  EXACT / ADJACENT / MISSING chips cascade out
        Hovering the DIN-templates row also pulls the CV sheet forward.
        ══════════════════════════════════════════════════════════════════ */
@@ -600,14 +743,14 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
         c.scale.setScalar(Math.max(s, 0.001))
       })
 
-    /* ATS dial needle sweeps up with the match score */
+    /* ATS gauge needle sweeps up with the match score */
     if (needle.current) {
       const target = (running && loopT > 3.3) || act.score > 0 ? 1.764 : -2.1
       needle.current.rotation.z = damp(needle.current.rotation.z, target, running ? 5 : 2.2, dt)
     }
 
     /* skill-classification chips fly out at the loop's finale */
-    const show = (running && loopT > 4.5) || act.chips > 0 ? 1 : 0
+    const show = (running && loopT > 4.5) || act.chips > 0 || hoverRow === 1 ? 1 : 0
     chipShow.current = damp(chipShow.current, show, show ? 6 : 2.4, dt)
     if (chips.current)
       chips.current.children.forEach((c, i) => {
@@ -645,24 +788,27 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
         0.16 + (running ? 0.14 : 0) + (act.doc > 0 || act.pdf > 0 ? 0.12 : 0) + (hovering.current ? 0.08 : 0)
     }
 
-    /* score badge */
+    /* ATS gauge — fixed to the application face; only the needle moves */
     if (badge.current) {
-      badge.current.rotation.z = t.current * (hovering.current ? 1.4 : 0.35)
       const pop =
-        (running && loopT > 3.3) || act.score > 0 ? 1 + Math.abs(Math.sin(t.current * 5)) * 0.16 : 1
-      badge.current.scale.setScalar(pop * (1 + (hovering.current ? 0.06 : 0)))
+        (running && loopT > 3.3) || act.score > 0 ? 1 + Math.abs(Math.sin(t.current * 5)) * 0.1 : 1
+      badge.current.scale.setScalar(pop * (1 + (hovering.current ? 0.03 : 0)))
     }
 
-    /* kanban lifecycle wave — staggered dot pulse on the 'kanban' action */
+    /* kanban highlight — walks the four columns while the board is in use */
     if (kanban.current) {
-      kanban.current.children.forEach((c, i) => {
-        if (act.kanban <= 0) {
-          c.scale.setScalar(1)
-          return
-        }
-        const u = (2.65 - act.kanban) * 1.55
-        c.scale.setScalar(1 + 0.85 * Math.max(0, 0.8 - Math.abs(u - i * 0.42)))
-      })
+      const hi = kanban.current.children[0] as THREE.Mesh | undefined
+      if (hi) {
+        const kbActive = act.kanban > 0 || (running && loopT > 4.15)
+        const u =
+          act.kanban > 0
+            ? THREE.MathUtils.clamp((2.65 - act.kanban) / 2.65, 0, 1)
+            : THREE.MathUtils.clamp((loopT - 4.15) / 1.25, 0, 1)
+        const idx = Math.min(3, Math.floor(u * 4))
+        hi.position.x = damp(hi.position.x, JOBFLOW_COL_X[idx], 9, dt)
+        const hm = hi.material as THREE.MeshBasicMaterial
+        hm.opacity = damp(hm.opacity, kbActive ? 0.24 : 0, 6, dt)
+      }
     }
   })
 
@@ -715,12 +861,63 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
         {/* step-complete tick badges (the row's step is done) */}
         <group ref={ticks}>
           {JOBFLOW_ROW_Y.map((y, i) => (
-            <mesh key={i} position={[0.94, y, 0.056]} scale={0.001}>
-              <planeGeometry args={[0.15, 0.15]} />
+            <mesh key={i} position={[0.26, y, 0.056]} scale={0.001}>
+              <planeGeometry args={[0.13, 0.13]} />
               <meshBasicMaterial map={tickTex} transparent toneMapped={false} depthWrite={false} />
             </mesh>
           ))}
         </group>
+
+        {/* ATS match gauge — embedded on the application, no independent spin */}
+        <group ref={badge} position={[JOBFLOW_GAUGE[0], JOBFLOW_GAUGE[1], 0.055]}>
+          <mesh>
+            <torusGeometry args={[0.3, 0.032, 12, 40]} />
+            <meshBasicMaterial color={VIOLET} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 0, 0.006]}>
+            <circleGeometry args={[0.27, 36]} />
+            <meshBasicMaterial map={scoreTex} transparent toneMapped={false} alphaTest={0.02} />
+          </mesh>
+        </group>
+        {/* the gauge's needle — driven by the ATS score sweep */}
+        <group
+          ref={needle}
+          position={[JOBFLOW_GAUGE[0], JOBFLOW_GAUGE[1], 0.075]}
+          rotation={[0, 0, -2.1]}
+        >
+          <mesh position={[0, 0.095, 0]}>
+            <boxGeometry args={[0.016, 0.19, 0.012]} />
+            <meshBasicMaterial color={TXT} toneMapped={false} />
+          </mesh>
+          <mesh>
+            <circleGeometry args={[0.026, 16]} />
+            <meshBasicMaterial color={VIOLET} toneMapped={false} />
+          </mesh>
+        </group>
+
+        {/* the mini kanban board is painted into the app; this glow walks its columns */}
+        <group ref={kanban} position={[0, JOBFLOW_BOARD_Y, 0.056]}>
+          <mesh position={[JOBFLOW_COL_X[0], 0, 0]}>
+            <planeGeometry args={[0.42, 0.34]} />
+            <meshBasicMaterial
+              color={VIOLET}
+              transparent
+              opacity={0}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        </group>
+
+        {/* app-face locators ride with the panel tilt, so the ring cannot drift
+            off the gauge / board / PDF badge when the pointer moves */}
+        <HotspotRing
+          color={VIOLET}
+          anchors={JOBFLOW_ANCHORS}
+          only={[0, 3, 4]}
+          feature={feature}
+        />
       </group>
 
       {/* live CV sheet — the suite's actual output, scanned in place */}
@@ -751,29 +948,6 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
         </mesh>
       </group>
 
-      {/* ATS match-score dial */}
-      <group ref={badge} position={[1.06, 1.48, 0.22]}>
-        <mesh>
-          <torusGeometry args={[0.3, 0.032, 12, 40]} />
-          <meshBasicMaterial color={VIOLET} toneMapped={false} />
-        </mesh>
-        <mesh position={[0, 0, 0.01]}>
-          <circleGeometry args={[0.27, 36]} />
-          <meshBasicMaterial map={scoreTex} transparent toneMapped={false} alphaTest={0.02} />
-        </mesh>
-      </group>
-      {/* the dial's needle — driven by the ATS score sweep */}
-      <group ref={needle} position={[1.06, 1.48, 0.265]} rotation={[0, 0, -2.1]}>
-        <mesh position={[0, 0.095, 0]}>
-          <boxGeometry args={[0.016, 0.19, 0.012]} />
-          <meshBasicMaterial color={INK} toneMapped={false} />
-        </mesh>
-        <mesh>
-          <circleGeometry args={[0.026, 16]} />
-          <meshBasicMaterial color={VIOLET} toneMapped={false} />
-        </mesh>
-      </group>
-
       {/* skill-classification chips (fly out on demo) */}
       <group ref={chips}>
         {[0, 1, 2].map((i) => (
@@ -784,35 +958,11 @@ function JobFlowModel({ hovering, pulse, feature }: ModelProps) {
         ))}
       </group>
 
-      {/* application pipeline dots */}
-      <group ref={kanban} position={[0, -1.78, 0.1]}>
-        <mesh position={[0, 0, -0.001]}>
-          <planeGeometry args={[1.16, 0.06]} />
-          <meshBasicMaterial color="#232043" transparent opacity={0.9} toneMapped={false} />
-        </mesh>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <mesh key={i} position={[(i - 2) * 0.26, 0, 0]}>
-            <circleGeometry args={[i === 2 ? 0.05 : 0.038, 20]} />
-            <meshBasicMaterial
-              color={i === 2 ? VIOLET : '#514E70'}
-              transparent
-              opacity={i === 2 ? 1 : 0.7}
-              toneMapped={false}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      {/* feature-row locator ring (panel hotspots) */}
+      {/* external locators (chips + CV sheet) stay in the un-tilted root space */}
       <HotspotRing
         color={VIOLET}
-        anchors={[
-          [1.06, 1.48, 0.28, 0.48], // deterministic ATS match-score dial + needle
-          [1.58, 0.02, 0.24, 0.62], // skill-classification chip cascade
-          [-1.74, -0.12, 0.46, 0.72], // live CV sheet — DIN 5008 DACH templates
-          [0, -1.78, 0.16, 0.74], // application pipeline — kanban tracker
-          [-1.74, 0.14, 0.46, 0.62], // CV export — vector-native PDF
-        ]}
+        anchors={JOBFLOW_ANCHORS}
+        only={[1, 2]}
         feature={feature}
       />
     </group>
@@ -1462,19 +1612,21 @@ function SudokuModel({ hovering, pulse, feature }: ModelProps) {
             </mesh>
           ))}
         </group>
-      </group>
 
-      <HotspotRing
-        color={CYAN}
-        anchors={[
-          [0, 1.52, 0.14, 0.6], // ELO scoreboard — rank + match sync
-          [1.62, 0.5, -0.3, 0.72], // rival board — ink-splash sabotage
-          [0.46, -1.65, 0.18, 0.34], // P2P voice channel
-          [0, 0.02, 0.12, 1.2], // main board — solver engine
-          [-0.34, 1.27, 0.16, 0.46], // control strip — reconnect / resync
-        ]}
-        feature={feature}
-      />
+        {/* locator lives inside the board's parallax group, so it tracks the
+            same tilt the features are rendered with */}
+        <HotspotRing
+          color={CYAN}
+          anchors={[
+            [0, 1.52, 0.14, 0.6], // ELO scoreboard — rank + match sync
+            [1.62, 0.5, -0.3, 0.72], // rival board — ink-splash sabotage
+            [0.37, -1.65, 0.08, 0.3], // P2P voice channel
+            [0, 0.02, 0.12, 1.2], // main board — solver engine
+            [0, 1.27, 0.08, 0.5], // control strip — reconnect / resync
+          ]}
+          feature={feature}
+        />
+      </group>
     </group>
   )
 }
@@ -2218,6 +2370,20 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
           <circleGeometry args={[0.045, 24]} />
           <meshBasicMaterial color={INK} toneMapped={false} />
         </mesh>
+
+        {/* locator rings share the pod's parallax transform, so they stay
+            locked to the clock / board / phone when the pointer moves */}
+        <HotspotRing
+          color={CYAN}
+          anchors={[
+            [1.2, -0.16, 0.34, 0.46], // alarm clock — wake-up alarms
+            [0.15, -1.12, 0.12, 1], // rail + spark — trip state machine
+            [0.18, 1.47, -0.14, 0.45], // departure board — live VBB arrivals
+            [0.5, 0.1, 0.36, 0.45], // GPS pin + rings — geofence
+            [0.96, 0.02, 0.46, 0.34], // heart tile — offline favourites
+          ]}
+          feature={feature}
+        />
       </group>
 
       {/* WAKE UP badge */}
@@ -2225,18 +2391,6 @@ function NapTripModel({ hovering, pulse, feature }: ModelProps) {
         <planeGeometry args={[0.88, 0.41]} />
         <meshBasicMaterial map={wake} transparent toneMapped={false} depthWrite={false} />
       </mesh>
-
-      <HotspotRing
-        color={CYAN}
-        anchors={[
-          [1.2, -0.16, 0.34, 0.46], // alarm clock — wake-up alarms
-          [0, -1.12, 0.16, 1.3], // rail + spark — trip state machine
-          [0.18, 1.47, 0.02, 0.8], // departure board — live VBB arrivals
-          [0.5, 0.12, 0.5, 0.45], // GPS pin + rings — geofence
-          [0.96, 0.02, 0.46, 0.34], // heart tile — offline favourites
-        ]}
-        feature={feature}
-      />
     </group>
   )
 }

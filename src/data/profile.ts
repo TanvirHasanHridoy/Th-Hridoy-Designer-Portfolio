@@ -43,12 +43,16 @@ export const PROFILE = {
 } as const
 
 /**
- * Contact form destination — the footer's "direct message" form composes a
- * mailto: draft addressed here (no backend required). Leave '' to keep the
- * form in wire-me mode: the submit button stays disabled with a hint until
- * a real address is set. e.g. `export const CONTACT_EMAIL = 'me@example.com'`
+ * Contact form endpoint. The footer posts to this URL directly, so the site
+ * never ships a personal email address in HTML, JS, or a `mailto:` link.
+ * Use a form service endpoint (Formspree/Web3Forms/Basin) or your own
+ * serverless handler. Leave unset to keep the form in wire-me mode; the
+ * submit button stays disabled and LinkedIn remains the fallback.
+ *
+ * Local:  VITE_CONTACT_ENDPOINT=https://formspree.io/f/xxxxxxx
+ * Vercel: Project Settings -> Environment Variables -> same name.
  */
-export const CONTACT_EMAIL = ''
+export const CONTACT_ENDPOINT = (import.meta.env.VITE_CONTACT_ENDPOINT ?? '').trim()
 
 /** tech stack — categorized. Only tools actually used in the public repos. */
 export const STACK: Array<{ title: string; note: string; items: string[] }> = [

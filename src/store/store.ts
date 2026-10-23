@@ -8,6 +8,7 @@ export type CursorVariant =
   | 'view' // filled accent disc + label (VIEW CASE)
   | 'play' // filled accent disc + label (PLAY REEL)
   | 'drag' // filled accent disc + label (DRAG / THROW)
+  | 'locate' // compact filled disc + label (LOCATE)
 
 export interface CursorState {
   label: string

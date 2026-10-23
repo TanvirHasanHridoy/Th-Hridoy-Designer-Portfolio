@@ -8,6 +8,7 @@ const RING_SIZE: Record<CursorVariant, number> = {
   view: 92,
   play: 96,
   drag: 84,
+  locate: 60,
 }
 
 /**
@@ -110,7 +111,7 @@ export default function CustomCursor() {
     <div className="no-select" aria-hidden>
       <div
         ref={ringRef}
-        className={`cursor-root cursor-ring ${cursor.variant === 'view' || cursor.variant === 'play' || cursor.variant === 'drag' ? 'is-filled' : ''}`}
+        className={`cursor-root cursor-ring ${cursor.variant === 'view' || cursor.variant === 'play' || cursor.variant === 'drag' || cursor.variant === 'locate' ? 'is-filled' : ''}`}
       >
         <span className="cursor-ring-label">{cursor.label}</span>
       </div>

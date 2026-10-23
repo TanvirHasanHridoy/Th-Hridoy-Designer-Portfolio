@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import gsap from 'gsap'
-import { ArrowUpRight, Crosshair, X } from 'lucide-react'
+import { ArrowUpRight, Crosshair, RotateCcw, X } from 'lucide-react'
 import MaskedLines from '../components/ui/MaskedLines'
 import Magnetic from '../components/ui/Magnetic'
 import { GithubMark } from '../components/ui/BrandIcons'
@@ -256,7 +256,7 @@ export default function FeaturedWork() {
       const focusTimer = window.setTimeout(() => {
         if (document.activeElement === arenaRef.current) {
           panelRef.current
-            ?.querySelector<HTMLElement>('button')
+            ?.querySelector<HTMLElement>('[aria-label="Close focus mode"]')
             ?.focus({ preventScroll: true })
         }
       }, 220)
@@ -611,9 +611,21 @@ function FocusPanel({
   featuredIndex: number
   onGoTo: (i: number) => void
 }) {
+  const lastPointerType = useRef<string>('mouse')
+
   const close = () => {
     playCue('close')
     useUI.getState().closeFocus()
+  }
+
+  const resetView = () => {
+    const spin = scrollStore.modelSpin
+    spin.yaw = 0
+    spin.pitch = 0
+    spin.yawVel = 0
+    spin.pitchVel = 0
+    spin.zoomTarget = 1
+    playCue('switch')
   }
 
   const onTabKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -627,20 +639,33 @@ function FocusPanel({
 
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={close}
-        data-cursor-variant="magnetic"
-        data-cursor="CLOSE"
-        aria-label="Close focus mode"
-        className="absolute right-0 top-0 grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
-      >
-        <X size={17} />
-      </button>
+      <div className="absolute right-0 top-0 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={resetView}
+          data-cursor-variant="magnetic"
+          data-cursor="RESET"
+          aria-label="Reset object rotation and zoom"
+          title="Reset object view"
+          className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
+        >
+          <RotateCcw size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={close}
+          data-cursor-variant="magnetic"
+          data-cursor="CLOSE"
+          aria-label="Close focus mode"
+          className="grid size-10 place-items-center rounded-full border border-line text-muted transition-colors hover:border-accent hover:text-accent"
+        >
+          <X size={17} />
+        </button>
+      </div>
 
       <div>
         {/* numeral + title row */}
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 pe-10 md:pe-12">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 pe-24 md:pe-28">
           <span
             className="no-select leading-none"
             aria-hidden
@@ -667,6 +692,9 @@ function FocusPanel({
         </div>
         <p className="mt-3 text-[0.92rem] leading-relaxed text-muted">
           {project.description}
+        </p>
+        <p className="eyebrow mt-3 sm:hidden" style={{ opacity: 0.65 }}>
+          drag to rotate · tap to replay
         </p>
 
         <p className="eyebrow mt-3">tech stack</p>
@@ -698,7 +726,8 @@ function FocusPanel({
           </span>
         </div>
         <p className="mt-2 text-[0.72rem] leading-relaxed tracking-wide text-muted">
-          Hover or focus a feature to point it out on the object. Click to run it.
+          <span className="hidden sm:inline">Hover or focus a feature to point it out on the object. Click to run it.</span>
+          <span className="sm:hidden">Tap a feature to point it out on the object. Tap again to run it.</span>
         </p>
         <ul className="mt-1.5 space-y-1">
           {project.features.map((f, i) => (
@@ -706,16 +735,32 @@ function FocusPanel({
               <button
                 type="button"
                 onClick={() => {
+                  /* touch has no hover: first tap locates, second tap runs */
+                  if (lastPointerType.current === 'touch' && scrollStore.hotspot !== i) {
+                    scrollStore.hotspot = i
+                    playCue('locate')
+                    return
+                  }
                   playCue('run')
                   scrollStore.modelAction.n += 1
                   scrollStore.modelAction.name = FEATURE_ACTIONS[project.id]?.[i] ?? null
                   scrollStore.hotspot = i
                 }}
-                onMouseEnter={() => (scrollStore.hotspot = i)}
-                onMouseLeave={() => {
-                  if (scrollStore.hotspot === i) scrollStore.hotspot = null
+                onPointerDown={(e) => {
+                  lastPointerType.current = e.pointerType
+                }}
+                onPointerEnter={(e) => {
+                  if (e.pointerType !== 'touch') scrollStore.hotspot = i
+                }}
+                onPointerLeave={(e) => {
+                  if (e.pointerType !== 'touch' && scrollStore.hotspot === i) {
+                    scrollStore.hotspot = null
+                  }
                 }}
                 onFocus={(e) => {
+                  if (lastPointerType.current === 'touch' && !e.currentTarget.matches(':focus-visible')) {
+                    return
+                  }
                   scrollStore.hotspot = i
                   if (e.currentTarget.matches(':focus-visible')) playCue('locate')
                 }}
@@ -723,9 +768,9 @@ function FocusPanel({
                   if (scrollStore.hotspot === i) scrollStore.hotspot = null
                 }}
                 data-cursor="LOCATE"
-                data-cursor-variant="view"
+                data-cursor-variant="locate"
                 data-sfx="locate"
-                title="Hover to locate on the object · click to run"
+                title="Hover or tap to locate on the object · click/tap again to run"
                 aria-describedby="feature-locator-hint"
                 className="group -mx-2 flex w-full items-start gap-2.5 rounded-md px-2 py-1 text-left transition-colors duration-300 hover:bg-[color-mix(in_srgb,var(--c-accent)_9%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--c-accent)_9%,transparent)]"
               >
@@ -764,7 +809,7 @@ function FocusPanel({
         </div>
 
         <p className="eyebrow mt-4 hidden sm:block" style={{ opacity: 0.7 }}>
-          drag the object → rotate · scroll → zoom · tap it → replay demo
+          ← → switch · drag rotate · scroll zoom · tap replay · esc close
         </p>
       </div>
 
